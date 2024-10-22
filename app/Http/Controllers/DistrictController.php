@@ -85,4 +85,29 @@ class DistrictController extends Controller
             'foodDistributed'
         ));
     }
+
+    public function showRecyclingProgress(District $district)
+    {
+        // Ottieni tutti gli obiettivi di riciclo per il distretto
+        $recyclingGoals = $district->recyclingGoals;
+
+        return view('districts.recycling_progress', compact('district', 'recyclingGoals'));
+    }
+
+    public function showEnvironmentalImpact(District $district)
+    {
+        // Sommiamo le emissioni, i consumi energetici, idrici e l'impatto sulla biodiversità
+        $totalCO2Emissions = $district->infrastructures->sum('co2_emissions');
+        $totalEnergyConsumption = $district->infrastructures->sum('energy_consumption');
+        $totalWaterConsumption = $district->infrastructures->sum('water_consumption');
+        $totalBiodiversityImpact = $district->infrastructures->avg('biodiversity_impact'); // Media impatto biodiversità
+
+        return view('districts.environmental_impact', compact(
+            'district',
+            'totalCO2Emissions',
+            'totalEnergyConsumption',
+            'totalWaterConsumption',
+            'totalBiodiversityImpact'
+        ));
+    }
 }

@@ -45,4 +45,9 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function citizen()
+    {
+        return $this->hasOne(Citizen::class); // Assumi che ogni utente abbia un cittadino
+    }
 }

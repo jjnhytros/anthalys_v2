@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('resource_transfers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('source_district_id')->constrained('districts')->onDelete('cascade');
-            $table->foreignId('target_district_id')->constrained('districts')->onDelete('cascade');
-            $table->string('resource_name');
+            $table->foreignId('source_district_id')->constrained('districts')->cascadeOnDelete();
+            $table->foreignId('target_district_id')->constrained('districts')->cascadeOnDelete();
+            $table->foreignId('resource_id')->constrained('resources')->cascadeOnDelete();
             $table->integer('quantity');
             $table->timestamps();
         });

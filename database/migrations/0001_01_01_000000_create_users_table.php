@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->decimal('cash', 15, 2)->default(0); // Aggiunge il campo cash con precisione decimale
             $table->rememberToken();
             $table->timestamps();
         });

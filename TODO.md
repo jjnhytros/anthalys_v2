@@ -46,3 +46,59 @@ Infine, ogni parte del progetto dovrebbe poter essere esportata per la tua futur
 - **Documentazione**: Implementare una funzione che automaticamente genera documenti di testo o PDF con le informazioni su ogni modello (edifici, abitanti, risorse, ecc.).
 
 
+---
+
+### 1. **Monitoraggio Dinamico delle Risorse**:
+   - [?] **Implementazione AJAX** per aggiornare il consumo e la produzione delle risorse in tempo reale, senza ricaricare la pagina.
+   - **Alert o Notifiche** quando una risorsa scende sotto un certo livello critico.
+
+### 2. **Espansione della Città**:
+   - **Aggiungere Nuovi Distretti**: Implementare la possibilità di espandere la città aggiungendo nuovi distretti tramite una view interattiva.
+   - **Pianificazione Urbana**: Creare una logica per allocare risorse, infrastrutture, ed edifici nei nuovi distretti in modo efficiente.
+
+### 3. **Sistema Economico Dinamico**:
+   - [?] **Imposta Progressiva**: Integrare un sistema di tassazione che varia in base al reddito dei cittadini e al consumo di risorse.
+   - [?] **Bilancio del Governo**: Implementare funzioni per la gestione delle entrate e delle spese governative (ad esempio, tramite tasse raccolte dai cittadini e manutenzione delle infrastrutture).
+
+### 4. **Sistema di Scambio di Risorse tra Distretti**:
+   - [x] Creare una funzionalità per **trasferire risorse** tra distretti in caso di surplus o deficit.
+   - [x] Integrare un sistema di **priorità** per determinare quali risorse trasferire e dove.
+
+### 5. **Espansione delle Infrastrutture**:
+   - Aggiungere la possibilità di **costruire nuove infrastrutture** nei distretti.
+   - Implementare un sistema di **upgrade delle infrastrutture**, dove le infrastrutture migliorano la loro efficienza ma richiedono più risorse per la manutenzione.
+
+### 6. **Modelli Climatici e Ambientali**:
+   - Implementare un sistema di **modelli climatici** che influenzano la produzione delle risorse o il deterioramento delle infrastrutture.
+   - Aggiungere la **stagionalità**: creare cambiamenti nei cicli di produzione delle risorse a seconda delle stagioni su Anthalys.
+
+### 7. **Gestione della Popolazione**:
+   - [x] **Crescita della popolazione**: Implementare una simulazione dinamica per la crescita della popolazione in base alle risorse disponibili e alle infrastrutture.
+   - **Migrazioni tra Distretti**: Simulare il movimento della popolazione tra i distretti in cerca di migliori condizioni di vita (risorse, infrastrutture, occupazione).
+
+### 8. **Sostenibilità e Ambiente**:
+   - [x] **Sistema di Riciclo**: Aggiungere un sistema che permetta il riciclo di risorse e la riduzione degli sprechi. I cittadini ricevono bonus per il riciclo corretto.
+   - [x] **Impatto Ambientale**: Implementare logiche per l'impatto delle infrastrutture sull'ambiente e creare modelli di sostenibilità.
+
+### 9. **Sistema di Eventi Casuali**:
+   - Aggiungere **eventi casuali** come disastri naturali, epidemie, crisi economiche o politiche che influenzano la città.
+   - Creare una logica per far fronte a questi eventi, come la costruzione di infrastrutture di emergenza o la gestione delle risorse durante una crisi.
+
+### 10. **Sistema di Notifiche**:
+   - **Notifiche di Manutenzione**: Creare un sistema di notifiche per avvisare quando un'infrastruttura sta per raggiungere un livello critico di deterioramento.
+   - **Notifiche di Eventi Importanti**: Implementare notifiche per eventi come la crescita della popolazione, la creazione di nuovi distretti, o il raggiungimento di un livello critico di risorse.
+
+### 11. **Gestione delle Infrastrutture**:
+   - Aggiungere un sistema che **ottimizzi la manutenzione** in base alle priorità, con possibilità di posticipare o accelerare la manutenzione di alcune infrastrutture a seconda del bilancio disponibile.
+
+### 12. **Grafici e Visualizzazione dei Dati**:
+   - Implementare la visualizzazione di **grafici interattivi** per mostrare l'andamento del consumo di risorse, la crescita della popolazione, e il deterioramento delle infrastrutture nel tempo.
+
+### 13. **Simulazione Temporale Avanzata**:
+   - Aggiungere un sistema di **avanzamento del tempo**, che simuli giorni, mesi, e stagioni. Ogni unità temporale potrebbe influenzare produzione, consumi e deterioramento.
+
+### 14. **Pianificazione a Lungo Termine**:
+   - Implementare la possibilità di creare piani a lungo termine per lo sviluppo della città, impostando obiettivi e priorità (es. crescere la popolazione, aumentare la produzione di energia, migliorare le infrastrutture).
+
+---
+

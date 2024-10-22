@@ -25,8 +25,9 @@ class ResourceSeeder extends Seeder
                 // Prepara i dati per l'inserimento
                 $resource_data[] = array_merge($resource, [
                     'quantity' => rand(10000, 50000),
-                    'produced' => rand(1000, 10000),
+                    'daily_production' => rand(1000, 10000),
                     'consumed' => rand(1000, 10000),
+                    'unit' => $resource['unit'],
                     'district_id' => $district->id,
                 ]);
             }

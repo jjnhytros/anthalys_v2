@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\City;
 use App\Models\District;
 use Illuminate\Database\Seeder;
+use App\Models\DistrictRecyclingGoal;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class CitySeeder extends Seeder
@@ -24,23 +25,13 @@ class CitySeeder extends Seeder
         $total_population = 2600000;
         $remaining_population = $total_population;
         $districts_data = [
-            ['name' => 'Centro Storico', 'area' => 15.5, 'description' => 'Il cuore antico della città.'],
-            ['name' => 'Quartiere Commerciale', 'area' => 12.3, 'description' => 'Centro economico con molti negozi.'],
-            ['name' => 'Zona Industriale', 'area' => 20.0, 'description' => 'Area dedicata alle industrie.'],
-            ['name' => 'Borgo Nord', 'area' => 18.2, 'description' => 'Quartiere residenziale a nord della città.'],
-            ['name' => 'Borgo Sud', 'area' => 17.0, 'description' => 'Zona tranquilla a sud.'],
-            ['name' => 'Lungolago', 'area' => 25.5, 'description' => 'Area pittoresca vicino al lago.'],
-            ['name' => 'Quartiere Universitario', 'area' => 10.5, 'description' => 'Sede delle principali università.'],
-            ['name' => 'Zona Est', 'area' => 22.8, 'description' => 'Zona residenziale in espansione.'],
-            ['name' => 'Zona Ovest', 'area' => 21.3, 'description' => 'Zona residenziale con molti parchi.'],
-            ['name' => 'Porto', 'area' => 15.0, 'description' => 'Centro logistico per le attività marittime.'],
-            ['name' => 'Quartiere delle Arti', 'area' => 8.5, 'description' => 'Il centro culturale della città.'],
-            ['name' => 'Periferia', 'area' => 30.0, 'description' => 'Zona di nuova urbanizzazione.'],
+            ['name' => 'Centro Storico', 'area' => 15.5, 'description' => 'Il cuore antico della città.', 'type' => 'Residenziale'],
+            ['name' => 'Quartiere Commerciale', 'area' => 12.3, 'description' => 'Centro economico con molti negozi.', 'type' => 'Commerciale'],
+            ['name' => 'Zona Industriale', 'area' => 20.0, 'description' => 'Area dedicata alle industrie.', 'type' => 'Industriale'],
+            // Aggiungi gli altri distretti...
         ];
 
-        // Creiamo un array per i distretti con i loro dati e le popolazioni generate
-        $districts_to_insert = [];
-        foreach ($districts_data as $index => $district) {
+        foreach ($districts_data as $index => $districtData) {
             if ($index == count($districts_data) - 1) {
                 $population = $remaining_population; // L'ultimo distretto prende il resto della popolazione
             } else {
@@ -48,13 +39,28 @@ class CitySeeder extends Seeder
                 $remaining_population -= $population;
             }
 
-            $districts_to_insert[] = array_merge($district, [
+            // Inserisci i distretti uno alla volta e ottieni il modello di ritorno
+            $district = District::create(array_merge($districtData, [
                 'population' => $population,
                 'city_id' => $city->id,
+            ]));
+
+            // Aggiungi obiettivi di riciclo per il distretto
+            $this->createRecyclingGoalsForDistrict($district);
+        }
+    }
+
+    protected function createRecyclingGoalsForDistrict(District $district)
+    {
+        $resources = ['Plastica', 'Carta', 'Vetro', 'Alluminio'];
+
+        foreach ($resources as $resource) {
+            DistrictRecyclingGoal::create([
+                'district_id' => $district->id,
+                'resource_type' => $resource,
+                'target_quantity' => rand(500, 2000), // Obiettivo casuale per il distretto
+                'current_quantity' => 0
             ]);
         }
-
-        // Inseriamo tutti i distretti in un'unica operazione
-        District::insert($districts_to_insert);
     }
 }

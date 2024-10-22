@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             ResourceSeeder::class,
             InfrastructureSeeder::class,
             EventSeeder::class,
+            CitizenSeeder::class,
         ]);
     }
 }

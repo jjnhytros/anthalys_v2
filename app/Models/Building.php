@@ -20,4 +20,16 @@ class Building extends Model
     {
         return $this->belongsTo(District::class);
     }
+    public function residents()
+    {
+        return $this->hasMany(Citizen::class, 'residential_building_id');
+    }
+    public function workers()
+    {
+        return $this->hasMany(Citizen::class, 'work_building_id');
+    }
+    public function citizen()
+    {
+        return $this->belongsTo(Citizen::class);
+    }
 }

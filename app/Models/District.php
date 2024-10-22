@@ -8,6 +8,7 @@ class District extends Model
 {
     protected $fillable = [
         'name',
+        'type',
         'population',
         'area',
         'description',
@@ -26,10 +27,30 @@ class District extends Model
     {
         return $this->hasMany(Resource::class);
     }
+    public function citizens()
+    {
+        return $this->hasManyThrough(Citizen::class, Building::class, 'district_id', 'residential_building_id');
+    }
+
     public function infrastructures()
     {
         return $this->hasMany(Infrastructure::class);
     }
+    public function recyclingGoals()
+    {
+        return $this->hasMany(DistrictRecyclingGoal::class);
+    }
+    public function migrationsFrom()
+    {
+        return $this->hasMany(Migration::class, 'from_district_id');
+    }
+
+    public function migrationsTo()
+    {
+        return $this->hasMany(Migration::class, 'to_district_id');
+    }
+
+
 
     public function transferResource(District $targetDistrict, $resourceName, $quantity)
     {
