@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\District;
-use App\Models\Infrastructure;
+use App\Models\City\District;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\City\Infrastructure;
 
 class InfrastructureSeeder extends Seeder
 {

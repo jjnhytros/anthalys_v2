@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\WasteType;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Recycling\WasteType;
 
 class WasteTypeSeeder extends Seeder
 {

@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\District;
+use App\Models\City\District;
 use Illuminate\Database\Seeder;
-use App\Models\AgriculturalResource;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Agricolture\AgriculturalResource;
 
 class AgriculturalResourceSeeder extends Seeder
 {

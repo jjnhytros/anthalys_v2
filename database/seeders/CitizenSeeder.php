@@ -2,12 +2,12 @@
 
 namespace Database\Seeders;
 
-use App\Models\City;
 use App\Models\User;
-use App\Models\Citizen;
-use App\Models\Building;
+use App\Models\City\City;
+use App\Models\City\Citizen;
+use App\Models\City\Building;
 use Illuminate\Database\Seeder;
-use App\Models\AutoWasteDisposer;
+use App\Models\Recycling\AutoWasteDisposer;
 
 class CitizenSeeder extends Seeder
 {

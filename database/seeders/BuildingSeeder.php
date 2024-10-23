@@ -2,10 +2,9 @@
 
 namespace Database\Seeders;
 
-use App\Models\Building;
-use App\Models\District;
+use App\Models\City\Building;
+use App\Models\City\District;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class BuildingSeeder extends Seeder
 {

@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Event;
+use App\Models\City\Event;
 use Illuminate\Database\Seeder;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class EventSeeder extends Seeder
 {

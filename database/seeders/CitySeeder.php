@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\City;
-use App\Models\District;
+use App\Models\City\City;
+use App\Models\City\District;
 use Illuminate\Database\Seeder;
-use App\Models\DistrictRecyclingGoal;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Recycling\DistrictRecyclingGoal;
 
 class CitySeeder extends Seeder
 {

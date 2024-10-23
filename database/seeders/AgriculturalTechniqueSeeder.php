@@ -3,8 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\AgriculturalTechnique;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Agricolture\AgriculturalTechnique;
 
 class AgriculturalTechniqueSeeder extends Seeder
 {

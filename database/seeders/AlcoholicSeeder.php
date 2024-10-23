@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Alcoholic;
-use App\Models\Ingredient;
-use App\Models\ProductionPhase;
 use Illuminate\Database\Seeder;
+use App\Models\Production\Alcoholic;
+use App\Models\Production\Ingredient;
+use App\Models\Production\ProductionPhase;
 
 class AlcoholicSeeder extends Seeder
 {
