@@ -18,6 +18,10 @@ return new class extends Migration
             $table->decimal('longitude', 10, 7);
             $table->integer('population')->nullable();
             $table->string('climate')->nullable();
+            $table->decimal('energy_saved', 12, 2)->default(0); // Energia risparmiata grazie al riciclo
+            $table->decimal('water_saved', 12, 2)->default(0);  // Acqua risparmiata grazie al riciclo
+            $table->decimal('materials_saved', 12, 2)->default(0); // Materiali riciclati e riutilizzati
+
             $table->timestamps();
         });
     }

@@ -3,9 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Models\User;
-use App\Models\Citizen;
-use App\Models\Transaction;
+use App\Models\City\Citizen;
 use Illuminate\Console\Command;
+use App\Models\City\Transaction;
 
 class CollectTaxes extends Command
 {

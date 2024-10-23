@@ -2,10 +2,9 @@
 
 namespace App\Console\Commands;
 
-use App\Models\City;
-use App\Models\Event;
-use App\Models\District;
-use App\Models\Migration;
+use App\Models\City\City;
+use App\Models\City\Event;
+use App\Models\City\District;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 

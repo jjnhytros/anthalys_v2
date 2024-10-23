@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\City;
+use App\Models\City\City;
 use Illuminate\Console\Command;
 
 class IncreaseResourceProduction extends Command

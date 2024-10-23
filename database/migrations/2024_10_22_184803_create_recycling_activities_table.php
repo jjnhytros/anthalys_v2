@@ -29,6 +29,22 @@ return new class extends Migration
             $table->decimal('current_quantity', 12, 2)->default(0); // Quantità attuale riciclata
             $table->timestamps();
         });
+
+        Schema::create('recycling_progress', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('citizen_id')->constrained()->onDelete('cascade');
+            $table->foreignId('waste_type_id')->constrained()->onDelete('cascade');
+            $table->decimal('quantity', 8, 2); // Quantità di rifiuto riciclato
+            $table->timestamps(); // Timestamp per tenere traccia del progresso nel tempo
+        });
+
+        Schema::create('recycling_awards', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('citizen_id')->constrained()->onDelete('cascade');
+            $table->string('award_type'); // Tipo di premio (es. "Cittadino Sostenibile")
+            $table->integer('year'); // Anno in cui viene assegnato il premio
+            $table->timestamps();
+        });
     }
 
     /**
@@ -36,6 +52,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('recycling_awards');
+        Schema::dropIfExists('recycling_progress');
         Schema::dropIfExists('district_recycling_goals');
         Schema::dropIfExists('recycling_activities');
     }

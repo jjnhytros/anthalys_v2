@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Citizen;
 use App\Models\Building;
 use Illuminate\Database\Seeder;
+use App\Models\AutoWasteDisposer;
 
 class CitizenSeeder extends Seeder
 {
@@ -54,6 +55,18 @@ class CitizenSeeder extends Seeder
                     }
                     $citizen->save(); // Salviamo l'aggiornamento del work_building_id
                 }
+            }
+        }
+        $citizens = Citizen::all();
+
+        foreach ($citizens as $citizen) {
+            if (rand(0, 1)) {
+                // Assegniamo casualmente uno smaltitore automatico alle famiglie
+                AutoWasteDisposer::create([
+                    'type' => 'Compostatore',
+                    'efficiency' => 85.00, // Riduzione rifiuti organici dell'85%
+                    'citizen_id' => $citizen->id,
+                ]);
             }
         }
     }

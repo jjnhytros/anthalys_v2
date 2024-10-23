@@ -102,3 +102,5 @@ Infine, ogni parte del progetto dovrebbe poter essere esportata per la tua futur
 
 ---
 
+Classifiche Cittadini: Creare una funzionalità di classifiche per visualizzare i cittadini più virtuosi nel riciclo e nell'uso degli smaltitori automatici.
+Notifiche per i Cittadini: Implementare un sistema di notifiche che informa i cittadini sui premi ricevuti, nuovi incentivi o la loro posizione nella classifica.

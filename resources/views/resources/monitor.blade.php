@@ -11,6 +11,7 @@
                     <th>Quantità Disponibile</th>
                     <th>Produzione Giornaliera</th>
                     <th>Consumo Giornaliero</th>
+                    <th>Risorse Risparmiate (Riciclo)</th>
                 </tr>
             </thead>
             <tbody>
@@ -20,6 +21,7 @@
                         <td class="quantity">{{ $resource->quantity }} {{ $resource->unit }}</td>
                         <td class="produced">{{ $resource->produced }} {{ $resource->unit }}</td>
                         <td class="consumed">{{ $resource->consumed }} {{ $resource->unit }}</td>
+                        <td class="saved">{{ $resource->saved ?? 0 }} {{ $resource->unit }}</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -43,6 +45,7 @@
                         resourceRow.find('.quantity').text(resource.quantity + ' ' + resource.unit);
                         resourceRow.find('.produced').text(resource.produced + ' ' + resource.unit);
                         resourceRow.find('.consumed').text(resource.consumed + ' ' + resource.unit);
+                        resourceRow.find('.saved').text((resource.saved || 0) + ' ' + resource.unit);
                     });
                 }
             });

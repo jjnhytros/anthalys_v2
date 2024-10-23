@@ -20,6 +20,12 @@ class DatabaseSeeder extends Seeder
             InfrastructureSeeder::class,
             EventSeeder::class,
             CitizenSeeder::class,
+            WasteTypeSeeder::class,
+            WasteTreatmentSeeder::class,
+            SeasonSeeder::class,
+            AgriculturalTechniqueSeeder::class,
+            AgriculturalResourceSeeder::class,
+            AlcoholicSeeder::class,
         ]);
     }
 }
