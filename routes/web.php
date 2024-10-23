@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\City\PolicyController;
 use App\Http\Controllers\City\CityController;
 use App\Http\Controllers\City\CitizenController;
 use App\Http\Controllers\City\DistrictController;
@@ -79,3 +80,6 @@ Route::get('/agriculture/production', [AgriculturalController::class, 'index'])-
 
 // Produzioni
 Route::resource('alcoholics', AlcoholicController::class);
+
+// Politiche
+Route::resource('policies', PolicyController::class);

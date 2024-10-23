@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             AgriculturalTechniqueSeeder::class,
             AgriculturalResourceSeeder::class,
             AlcoholicSeeder::class,
+            PolicySeeder::class,
         ]);
     }
 }
