@@ -2,14 +2,14 @@
 
 @section('content')
     <div class="container">
-        <h1>Politiche Governative</h1>
+        <h1>Politiche Fiscali e Sussidi</h1>
         <a href="{{ route('policies.create') }}" class="btn btn-primary">Aggiungi Politica</a>
         <table class="table mt-4">
             <thead>
                 <tr>
                     <th>Nome</th>
                     <th>Tipo</th>
-                    <th>Aliquota/Percentuale</th>
+                    <th>Percentuale</th>
                     <th>Stato</th>
                     <th>Azioni</th>
                 </tr>

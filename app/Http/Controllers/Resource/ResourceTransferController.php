@@ -58,4 +58,45 @@ class ResourceTransferController extends Controller
 
         return back()->with('success', 'Trasferimento di risorse completato con successo!');
     }
+    public function redistributeResources()
+    {
+        $districts = District::with('resources')->get();
+
+        foreach ($districts as $district) {
+            foreach ($district->resources as $resource) {
+                // Se una risorsa è sotto il livello critico, cerca un distretto con un surplus
+                if ($resource->quantity < 100) {
+                    $sourceDistrict = $districts->filter(function ($d) use ($resource) {
+                        return $d->resources->where('name', $resource->name)->first()->quantity > 500;
+                    })->first();
+
+                    if ($sourceDistrict) {
+                        $this->transferResource($sourceDistrict, $district, $resource);
+                    }
+                }
+            }
+        }
+    }
+
+    private function transferResource($sourceDistrict, $targetDistrict, $resource)
+    {
+        $quantityToTransfer = 100; // Quantità da trasferire
+
+        ResourceTransfer::create([
+            'source_district_id' => $sourceDistrict->id,
+            'target_district_id' => $targetDistrict->id,
+            'resource_id' => $resource->id,
+            'quantity' => $quantityToTransfer,
+        ]);
+
+        // Aggiorna la quantità di risorse nei distretti
+        $sourceResource = $sourceDistrict->resources->where('name', $resource->name)->first();
+        $targetResource = $targetDistrict->resources->where('name', $resource->name)->first();
+
+        $sourceResource->quantity -= $quantityToTransfer;
+        $targetResource->quantity += $quantityToTransfer;
+
+        $sourceResource->save();
+        $targetResource->save();
+    }
 }

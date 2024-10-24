@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\City;
 
 use App\Models\City\City;
+use App\Models\City\Citizen;
+use App\Models\City\Message;
 use Illuminate\Http\Request;
 use App\Models\City\District;
+use App\Jobs\TransferResourcesJob;
 use App\Http\Controllers\Controller;
 
 class DistrictController extends Controller
@@ -110,5 +113,74 @@ class DistrictController extends Controller
             'totalWaterConsumption',
             'totalBiodiversityImpact'
         ));
+    }
+
+    public function showResources()
+    {
+        $districts = District::all();
+        return view('districts.resources', compact('districts'));
+    }
+
+    public function showTransferForm($id)
+    {
+        $district = District::findOrFail($id);
+        $otherDistricts = District::where('id', '!=', $district->id)->get();
+        return view('districts.transfer', compact('district', 'otherDistricts'));
+    }
+
+    public function transferResources(Request $request)
+    {
+        $fromDistrict = District::findOrFail($request->input('from_district_id'));
+        $toDistrict = District::findOrFail($request->input('to_district_id'));
+        $resourceType = $request->input('resource_type');
+        $amount = $request->input('amount');
+
+        // Esegui il job per trasferire le risorse
+        TransferResourcesJob::dispatch($fromDistrict, $toDistrict, $resourceType, $amount);
+
+        return redirect()->route('districts.resources')->with('success', 'Risorse trasferite con successo.');
+    }
+
+    public function showDashboard()
+    {
+        // Recuperiamo i distretti con risorse critiche
+        $criticalDistricts = District::where('energy', '<', 'energy_threshold')
+            ->orWhere('water', '<', 'water_threshold')
+            ->orWhere('food', '<', 'food_threshold')
+            ->get();
+
+        // Invia le notifiche quando necessario
+        foreach ($criticalDistricts as $district) {
+            if ($district->energy < $district->energy_threshold) {
+                $this->sendResourceAlert('energia', $district);  // Passiamo il distretto come parametro
+            }
+            if ($district->water < $district->water_threshold) {
+                $this->sendResourceAlert('acqua', $district);  // Passiamo il distretto come parametro
+            }
+            if ($district->food < $district->food_threshold) {
+                $this->sendResourceAlert('cibo', $district);  // Passiamo il distretto come parametro
+            }
+        }
+
+        return view('dashboard', compact('criticalDistricts'));
+    }
+
+    protected function sendResourceAlert($resourceType, District $district)
+    {
+        // Recupera gli amministratori per inviare le notifiche
+        $govenment = Citizen::find(2);
+
+        Message::create([
+            'sender_id' => null, // Notifica di sistema
+            'recipient_id' => $govenment->id, // Destinatario
+            'subject' => 'Allerta Risorse: Basso Livello di ' . ucfirst($resourceType),
+            'message' => 'Il distretto "' . $district->name . '" ha un livello critico di ' . $resourceType . '.',
+            'type' => 'alert',
+            'url' => route('districts.show', $district->id),
+            'is_message' => false, // Non è un messaggio
+            'is_notification' => true, // È una notifica
+            'is_email' => false, // Non è un'email
+            'status' => 'unread', // Notifica non letta
+        ]);
     }
 }

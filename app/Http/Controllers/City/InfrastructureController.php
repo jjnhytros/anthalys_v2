@@ -100,4 +100,23 @@ class InfrastructureController extends Controller
 
         return response()->json(['success' => true]);
     }
+    public function monitorInfrastructureEfficiency($infrastructure)
+    {
+        // Controlliamo se l'infrastruttura è sotto una certa soglia di efficienza
+        if ($infrastructure->efficiency < 0.8) {
+            $this->optimizeInfrastructure($infrastructure);
+        }
+
+        return response()->json(['efficiency' => $infrastructure->efficiency]);
+    }
+    private function optimizeInfrastructure($infrastructure)
+    {
+        // Ottimizza l'infrastruttura migliorando la sua efficienza
+        $infrastructure->efficiency += 0.1;
+        $infrastructure->save();
+
+        // Notifica il governo dell'ottimizzazione
+        $government = User::where('name', 'government')->first();
+        // $government->notify(new GovernmentNotification('L\'infrastruttura ' . $infrastructure->name . ' è stata ottimizzata.'));
+    }
 }

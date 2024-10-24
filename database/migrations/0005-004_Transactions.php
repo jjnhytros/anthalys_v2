@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('citizen_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('type'); // 'income' per entrate, 'expense' per spese
             $table->decimal('amount', 10, 2); // L'importo della transazione
             $table->text('description')->nullable(); // Dettagli della transazione

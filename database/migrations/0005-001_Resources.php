@@ -21,6 +21,10 @@ return new class extends Migration
             $table->decimal('daily_production', 12, 2)->default(0); // Produzione giornaliera
             $table->decimal('optimized_production', 12, 2)->default(0);
             $table->foreignId('district_id')->constrained()->cascadeOnDelete();
+            $table->decimal('surplus_limit', 10, 2)->default(1000); // Limite oltre il quale è considerato surplus
+            $table->decimal('deficit_limit', 10, 2)->default(200);  // Limite sotto il quale è considerato deficit
+            $table->integer('priority')->default(1); // Priorità delle risorse: 1 = alta, 3 = bassa
+
             $table->timestamps();
         });
     }

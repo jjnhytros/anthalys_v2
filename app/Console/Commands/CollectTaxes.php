@@ -9,7 +9,7 @@ use App\Models\City\Transaction;
 
 class CollectTaxes extends Command
 {
-    protected $signature = 'simulate:taxescollect';
+    protected $signature = 'anthalys:taxes-collect';
     protected $description = 'Raccoglie le tasse dagli abitanti attivi lavorativamente e aggiorna il campo cash del governo.';
 
     public function __construct()
@@ -26,7 +26,7 @@ class CollectTaxes extends Command
             return;
         }
 
-        // Definizione delle aliquote fiscali per fasce di reddito
+        // Recupera le fasce fiscali e la tassa sulle risorse
         $taxBrackets = [
             ['limit' => 3000, 'rate' => 0.015],
             ['limit' => 6000, 'rate' => 0.03],
@@ -45,82 +45,36 @@ class CollectTaxes extends Command
             ['limit' => 48000, 'rate' => 0.225],
             ['limit' => 51000, 'rate' => 0.24],
             ['limit' => 144000, 'rate' => 0.28],
-
         ];
 
-        // Tassa sul consumo di risorse (1% aggiuntivo per ogni 1000 unità di risorse consumate)
-        $resourceTaxRate = 0.01; // 1%
+        $resourceTaxRate = 0.01; // Tassa sulle risorse
 
-        // Recuperiamo tutti i cittadini impiegati
+        // Recupera tutti i cittadini impiegati
         $citizens = Citizen::where('is_employed', true)->get();
         if ($citizens->isEmpty()) {
             $this->error('Nessun cittadino impiegato trovato.');
             return;
         }
 
-        // Sommiamo manualmente le tasse da raccogliere
-        $taxesCollected = 0;
+        // Somma le tasse raccolte
+        $totalTaxes = 0;
 
         foreach ($citizens as $citizen) {
-            // Calcolo tasse sul reddito
-            $incomeTax = $this->calculateIncomeTax($citizen->income, $taxBrackets);
+            // Usa il metodo calculateTaxes per calcolare e versare le tasse
+            $taxCollected = $citizen->calculateTaxes($taxBrackets, $resourceTaxRate);
+            $totalTaxes += $taxCollected;
 
-            // Mostra il reddito per debugging
-            $this->info('Reddito del cittadino: ' . $citizen->income . ' €. Tasse calcolate: ' . $incomeTax);
+            // Registra la transazione della tassa raccolta
+            Transaction::create([
+                'citizen_id' => $citizen->id,
+                'type' => 'tax',
+                'amount' => $taxCollected,
+                'description' => 'Tasse raccolte dal cittadino ' . $citizen->name,
+            ]);
 
-            // Calcolo tassa sul consumo di risorse
-            $resourceConsumption = 0;
-
-            foreach ($citizens as $citizen) {
-                // Calcolo tasse sul reddito
-                $incomeTax = $this->calculateIncomeTax($citizen->income, $taxBrackets);
-
-                // Calcolo tassa sul consumo di risorse
-                $resourceConsumption = 0;
-                if ($citizen->residentialBuilding) {
-                    $resourceConsumption += $citizen->residentialBuilding->energy_consumption;
-                    $resourceConsumption += $citizen->residentialBuilding->water_consumption;
-                    $resourceConsumption += $citizen->residentialBuilding->food_consumption;
-                }
-                if ($citizen->workBuilding) {
-                    $resourceConsumption += $citizen->workBuilding->energy_consumption;
-                    $resourceConsumption += $citizen->workBuilding->water_consumption;
-                }
-
-                $resourceTax = ($resourceConsumption / 1000) * $resourceTaxRate;
-                $totalTax = $incomeTax + $resourceTax;
-
-                $taxesCollected += $totalTax;
-
-                // Salva la transazione di tassa
-                Transaction::create([
-                    'type' => 'income',
-                    'amount' => $totalTax,
-                    'description' => 'Tasse raccolte dai cittadini',
-                ]);
-
-                $this->info('Tasse raccolte dal cittadino: ' . $totalTax . ' €');
-            }
-
-            // Aggiorna il bilancio del governo
-            $government->cash += $taxesCollected;
-            $government->save();
-
-            $this->info('Tasse totali raccolte: ' . $taxesCollected . ' €. Nuovo bilancio del governo: ' . $government->cash);
+            $this->info('Tasse raccolte dal cittadino: ' . athel($taxCollected));
         }
-    }
 
-    private function calculateIncomeTax($income, $taxBrackets)
-    {
-        $tax = 0;
-        foreach ($taxBrackets as $bracket) {
-            if ($bracket['limit'] === null || $income <= $bracket['limit']) {
-                $tax += $income * $bracket['rate'];
-                break;
-            }
-            $tax += $bracket['limit'] * $bracket['rate'];
-            $income -= $bracket['limit'];
-        }
-        return $tax;
+        $this->info('Tasse totali raccolte: ' . athel($totalTaxes));
     }
 }

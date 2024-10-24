@@ -91,6 +91,19 @@ class CitizenController extends Controller
         return view('citizens.recycling_progress', compact('citizen', 'recyclingProgress'));
     }
 
+    /**
+     * Simula le tasse per tutti i cittadini
+     */
+    public function simulateTaxes()
+    {
+        $citizens = Citizen::all();
+
+        foreach ($citizens as $citizen) {
+            $citizen->calculateTaxes(); // Calcola e aggiorna le tasse
+        }
+
+        return response()->json(['message' => 'Tasse calcolate con successo per tutti i cittadini']);
+    }
 
     protected function calculateBonus($resourceType, $quantity)
     {

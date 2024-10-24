@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('citizens', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->foreignId('user_id')->nullable()->constrained()->cascadeOnDelete();
             $table->boolean('is_employed')->default(false); // Indica se il cittadino è lavorativamente attivo
             $table->decimal('income', 15, 2)->default(0);   // Reddito del cittadino
             $table->decimal('cash', 12, 2)->default(0);     // Aggiungi il campo 'cash'
@@ -23,6 +24,8 @@ return new class extends Migration
             $table->boolean('is_working')->default(true); // Stato di lavoro (attivo o in pausa)
             $table->integer('bonus_points')->nullable()->default(0);
             $table->integer('recycling_points')->default(0); // Punti di riciclo
+            $table->integer('years_of_service')->default(0); // Anni di servizio accumulati
+            $table->boolean('is_retired')->default(false);   // Indica se il cittadino è in pensione
 
             $table->foreignId('district_id')->nullable()->constrained('districts')->cascadeOnDelete();
             $table->foreignId('residential_building_id')->nullable()->constrained('buildings')->cascadeOnDelete(); // Collega alla casa (residenziale)

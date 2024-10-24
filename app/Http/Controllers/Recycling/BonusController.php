@@ -65,4 +65,12 @@ class BonusController extends Controller
 
         return redirect()->back()->with('error', 'Non hai abbastanza punti per riscattare un buono.');
     }
+    public function rewardSustainableActivities($citizen)
+    {
+        $bonus = 100; // Bonus standard per attività sostenibili
+        $citizen->bonus_points += $bonus;
+        $citizen->save();
+
+        return response()->json(['message' => 'Bonus assegnato con successo!']);
+    }
 }
