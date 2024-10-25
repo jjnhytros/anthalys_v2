@@ -50,6 +50,8 @@ Schedule::call(function () {
 Schedule::job(new \App\Jobs\UpdateProductPricesJob())->daily();
 Schedule::job(new \App\Jobs\MegaWarehouse\CheckAndRestockProductsJob())->dailyAt('01:00');
 Schedule::job(new \App\Jobs\MegaWarehouse\ProcessWarehouseWasteJob())->daily();
+Schedule::job(new \App\Jobs\MegaWarehouse\MonitorExpiringProductsJob())->daily();
+Schedule::job(new \App\Jobs\MegaWarehouse\MonitorPackagedFoodStockJob())->daily();
 
 Schedule::job(new \App\Jobs\MegaWarehouse\ProcessCompostJob())->weekly();
 

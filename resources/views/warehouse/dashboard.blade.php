@@ -51,4 +51,37 @@
         </tbody>
     </table>
     </div>
+    <h3>Prodotti in Scadenza</h3>
+    <ul>
+        @foreach ($expiringProducts as $product)
+            <li>{{ $product->name }} - Scadenza: {{ $product->expiry_date->format('d-m-Y') }}</li>
+        @endforeach
+    </ul>
+
+    <h3>Prodotti Donati</h3>
+    <ul>
+        @foreach ($donatedProducts as $product)
+            <li>{{ $product->name }} - Donato il: {{ $product->updated_at->format('d-m-Y') }}</li>
+        @endforeach
+    </ul>
+
+    <script>
+        setInterval(() => {
+            fetch('/warehouse/check-stock')
+                .then(response => response.json())
+                .then(data => {
+                    // Aggiorna la vista con i dati del magazzino a bassa scorta
+                    console.log('Warehouse low stock:', data);
+                    // Logica per aggiornare l'interfaccia utente
+                });
+
+            fetch('/market/check-stock')
+                .then(response => response.json())
+                .then(data => {
+                    // Aggiorna la vista con i dati del mercato locale a bassa scorta
+                    console.log('Local Market low stock:', data);
+                    // Logica per aggiornare l'interfaccia utente
+                });
+        }, 60000); // Ogni minuto
+    </script>
 @endsection

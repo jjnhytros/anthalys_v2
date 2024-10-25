@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\City;
 
+use App\Models\City\Citizen;
 use Illuminate\Http\Request;
 use App\Models\City\LocalMarket;
 use App\Http\Controllers\Controller;
 use App\Models\Market\MarketProduct;
+use App\Models\MegaWarehouse\Warehouse;
+use App\Models\MegaWarehouse\WarehouseTransaction;
 
 class LocalMarketController extends Controller
 {
@@ -61,5 +64,50 @@ class LocalMarketController extends Controller
 
         // Passa i prodotti alla view della dashboard dei prezzi
         return view('markets.pricing', compact('products'));
+    }
+
+    public function purchaseFromWarehouse(Request $request, $supplierId)
+    {
+        $supplier = Citizen::findOrFail($supplierId);
+        $product = Warehouse::where('product_type', $request->product_type)->first();
+
+        if ($product && $product->quantity >= $request->quantity) {
+            // Riduci la quantità dal magazzino e registra la transazione
+            $product->quantity -= $request->quantity;
+            $product->save();
+
+            WarehouseTransaction::create([
+                'product_id' => $product->id,
+                'supplier_id' => $supplier->id,
+                'quantity' => $request->quantity,
+                'transaction_type' => 'purchase',
+                'date' => now(),
+            ]);
+
+            return response()->json(['message' => 'Acquisto dal magazzino completato.']);
+        }
+
+        return response()->json(['error' => 'Scorte insufficienti.'], 400);
+    }
+
+    public function sellToMarket(Request $request, $vendorId)
+    {
+        $vendor = Citizen::findOrFail($vendorId);
+        $marketProduct = MarketProduct::where('name', $request->product_name)->first();
+
+        if ($marketProduct) {
+            $marketProduct->quantity += $request->quantity;
+            $marketProduct->save();
+
+            return response()->json(['message' => 'Vendita al mercato completata.']);
+        }
+
+        return response()->json(['error' => 'Prodotto non trovato nel mercato.'], 404);
+    }
+
+    public function checkStock()
+    {
+        $lowStockItems = MarketProduct::where('quantity', '<', 'min_quantity')->get();
+        return response()->json($lowStockItems);
     }
 }

@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\MegaWarehouse;
 
+use Carbon\Carbon;
+use App\Models\City\Citizen;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
+use App\Models\City\Donation;
 use App\Models\Resource\Resource;
 use App\Models\Market\OnlineOrder;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +17,7 @@ use App\Models\Agricolture\CompostStorage;
 use App\Jobs\MegaWarehouse\DispatchDroneJob;
 use App\Models\MegaWarehouse\SupplierPayment;
 use App\Models\MegaWarehouse\WarehouseReport;
+use App\Models\MegaWarehouse\WarehouseTransaction;
 use App\Models\MegaWarehouse\WarehouseOperationLog;
 
 class WarehouseController extends Controller
@@ -23,10 +27,27 @@ class WarehouseController extends Controller
         $products = Warehouse::all();
         $recyclableOrders = OnlineOrder::where('is_recyclable', true)->count();
         $totalEnergyUsage = Warehouse::sum('energy_usage');
+        $freshProducts = Warehouse::where('product_type', 'alimentare')
+            ->whereDate('expiry_date', '>=', now())
+            ->orderBy('expiry_date', 'asc')
+            ->get();
+        $expiringSoonFresh = Warehouse::where('status', 'expiring_soon')
+            ->where('product_type', 'fresh')->get();
 
-        return view('warehouse.dashboard', compact('products'), [
-            'recyclableOrders' => $recyclableOrders,
-            'totalEnergyUsage' => $totalEnergyUsage,
+        $expiringSoonPackaged = Warehouse::where('status', 'expiring_soon')
+            ->where('product_type', 'packaged')->get();
+
+        $pendingDonations = Warehouse::where('status', 'pending_donation')->get();
+
+        return view('warehouse.dashboard', compact(
+            'products',
+            'expiringSoonFresh',
+            'expiringSoonPackaged',
+            'recyclableOrders',
+            'totalEnergyUsage',
+            'freshProducts',
+            'pendingDonations'
+        ), [
             'averageEnergyUsage' => WarehouseReport::averageEnergyUsage(),
             'recyclableOrderPercentage' => WarehouseReport::recyclableOrderPercentage(),
             'totalRevenue' => WarehouseReport::totalRevenue(),
@@ -34,11 +55,53 @@ class WarehouseController extends Controller
         ]);
     }
 
+    public function checkExpiryDates()
+    {
+        $soonExpiringProducts = Warehouse::where('product_type', 'alimentare')
+            ->whereBetween('expiry_date', [now(), now()->addDays(7)])
+            ->get();
+
+        foreach ($soonExpiringProducts as $product) {
+            // Creazione della notifica tramite metodo `message`
+            Message::create([
+                'sender_id' => 1, // ad esempio, l'ID del sistema o dell'amministratore
+                'recipient_id' => $product->manager_id, // ID del manager responsabile
+                'subject' => 'Avviso di Scadenza Prodotto',
+                'body' => "Il prodotto {$product->product_type} scadrà il {$product->expiry_date}. Verificare le scorte e le vendite.",
+                'is_read' => false,
+                'is_notification' => true,
+            ]);
+        }
+    }
+
     public function securityDashboard()
     {
         $operationLogs = WarehouseOperationLog::orderBy('operation_time', 'desc')->paginate(10);
         return view('warehouse.security_dashboard', compact('operationLogs'));
     }
+
+    public function donationDashboard()
+    {
+        $now = Carbon::now();
+        $expiringSoonDate = $now->copy()->addDays(24);
+        $donationThresholdDate = $now->copy()->addDays(18);
+
+        // Prodotti che scadono entro 24 giorni
+        $expiringProducts = Warehouse::where('expiry_date', '<=', $expiringSoonDate)
+            ->where('status', 'expiring_soon')
+            ->get();
+
+        // Prodotti pronti per la donazione
+        $pendingDonations = Warehouse::where('expiry_date', '<=', $donationThresholdDate)
+            ->where('status', 'pending_donation')
+            ->get();
+
+        // Prodotti già donati, con paginazione
+        $donatedProducts = Donation::with('product')->paginate(10);
+
+        return view('warehouse.donation_dashboard', compact('expiringProducts', 'pendingDonations', 'donatedProducts'));
+    }
+
 
     public function processOrder(Request $request, $orderId)
     {
@@ -126,6 +189,12 @@ class WarehouseController extends Controller
         return view('warehouse.low_stock', compact('lowStockItems'));
     }
 
+    public function checkStock()
+    {
+        $lowStockItems = Warehouse::where('quantity', '<', 'min_quantity')->get();
+        return response()->json($lowStockItems);
+    }
+
     public function initiateManualRestock(Warehouse $stockItem)
     {
         $supplier = $stockItem->product->supplier;
@@ -164,5 +233,30 @@ class WarehouseController extends Controller
         }
 
         return redirect()->back()->with('error', 'Impossibile completare il rifornimento. Fornitore non disponibile o stock insufficiente.');
+    }
+
+    public function supplyVendors(Request $request, $vendorId)
+    {
+        $vendor = Citizen::findOrFail($vendorId);
+        $product = Warehouse::where('product_type', $request->product_type)->first();
+
+        if ($product && $product->quantity >= $request->quantity) {
+            // Riduci quantità dal magazzino
+            $product->quantity -= $request->quantity;
+            $product->save();
+
+            // Registra la transazione
+            WarehouseTransaction::create([
+                'product_id' => $product->id,
+                'vendor_id' => $vendor->id,
+                'quantity' => $request->quantity,
+                'transaction_type' => 'supply',
+                'date' => now(),
+            ]);
+
+            return response()->json(['message' => 'Rifornimento venditore completato.']);
+        }
+
+        return response()->json(['error' => 'Scorte insufficienti.'], 400);
     }
 }

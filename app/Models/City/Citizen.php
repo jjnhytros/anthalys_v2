@@ -52,6 +52,17 @@ class Citizen extends Model
         return $this->hasMany(Building::class, 'citizen_id'); // Assumendo che un cittadino possa avere più edifici
     }
 
+    public function scopeSupplier($query)
+    {
+        return $query->where('role', 'supplier');
+    }
+
+    public function scopeVendor($query)
+    {
+        return $query->where('role', 'vendor');
+    }
+
+
     /**
      * Calcola le tasse basate sulla politica fiscale attiva
      */

@@ -2,6 +2,7 @@
 
 namespace App\Models\MegaWarehouse;
 
+use App\Events\LowStockDetected;
 use Illuminate\Database\Eloquent\Model;
 
 class Warehouse extends Model
@@ -13,6 +14,9 @@ class Warehouse extends Model
         'quantity',
         'energy_usage',
         'critical_threshold',
+        'expiry_date',
+        'storage_type',
+        'is_donated',
     ];
 
     // Recupera i prodotti per tipo
@@ -32,5 +36,19 @@ class Warehouse extends Model
     {
         $this->energy_usage += $amount;
         $this->save();
+    }
+
+    public function isLowStock()
+    {
+        return $this->quantity < $this->min_quantity;
+    }
+
+    protected static function booted()
+    {
+        static::updating(function ($warehouse) {
+            if ($warehouse->isLowStock()) {
+                event(new LowStockDetected($warehouse));
+            }
+        });
     }
 }

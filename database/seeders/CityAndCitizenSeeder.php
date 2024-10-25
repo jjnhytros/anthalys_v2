@@ -8,6 +8,7 @@ use App\Models\City\Citizen;
 use App\Models\City\Building;
 use App\Models\City\District;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 use App\Models\Recycling\AutoWasteDisposer;
 use App\Models\Recycling\DistrictRecyclingGoal;
 
@@ -94,6 +95,7 @@ class CityAndCitizenSeeder extends Seeder
             'password' => bcrypt('password'),
             'cash' => 0,
         ]);
+        $admin->assignRole('admin');
 
         Citizen::create([
             'name' => 'Admin NPC',
@@ -111,6 +113,7 @@ class CityAndCitizenSeeder extends Seeder
             'password' => bcrypt('password'),
             'cash' => 100000.00,
         ]);
+        $government->assignRole('government');
 
         Citizen::create([
             'name' => 'Government NPC',
@@ -128,6 +131,7 @@ class CityAndCitizenSeeder extends Seeder
             'password' => bcrypt('password'),
             'cash' => 500000.00,
         ]);
+        $bank->assignRole('bank');
 
         Citizen::create([
             'name' => 'Bank NPC',
@@ -145,6 +149,10 @@ class CityAndCitizenSeeder extends Seeder
             'password' => bcrypt('password'),
             'cash' => 1000,
         ]);
+        $roles = Role::all();
+        foreach ($roles as $role) {
+            $jjnhytros->assignRole($role);
+        }
 
         Citizen::create([
             'name' => 'J.J.Nhytros',

@@ -1,6 +1,3 @@
-Per ottimizzare l'elenco dei `use`, possiamo raggruppare i controller che appartengono allo stesso namespace. In questo caso, raggrupperemo i controller che si trovano nei namespace `City`, `Market`, `Agricolture`, `MegaWarehouse`, `Resource`, e così via. Ecco la versione ottimizzata:
-
-```php
 <?php
 
 use App\Models\User;
@@ -8,26 +5,50 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Console\Commands\SimulateGovernmentPolicies;
 use App\Http\Controllers\City\{
-    TaxController, ChatController, CityController, DroneController,
-    EmailController, RobotController, PolicyController, RewardController,
-    CitizenController, SubsidyController, DistrictController, MigrationController,
-    GovernmentController, NotificationController, LocalMarketController,
-    ProductionReportController, InfrastructureController
+    TaxController,
+    ChatController,
+    CityController,
+    DroneController,
+    EmailController,
+    RobotController,
+    PolicyController,
+    RewardController,
+    CitizenController,
+    SubsidyController,
+    DistrictController,
+    MigrationController,
+    GovernmentController,
+    NotificationController,
+    LocalMarketController,
+    ProductionReportController,
+    InfrastructureController
 };
 use App\Http\Controllers\Market\{
-    StallController, SupplyController, OnlineOrderController, MarketProductController,
+    StallController,
+    SupplyController,
+    OnlineOrderController,
+    MarketProductController,
     ProductReviewController
 };
 use App\Http\Controllers\Agricolture\{
-    CropController, FarmController, AnimalController, SensorController,
-    GreenhouseController, AquacultureController, AgriculturalController,
+    CropController,
+    FarmController,
+    AnimalController,
+    SensorController,
+    GreenhouseController,
+    AquacultureController,
+    AgriculturalController,
     FarmDashboardController
 };
 use App\Http\Controllers\Recycling\BonusController;
 use App\Http\Controllers\Resource\{
-    ResourceController, ResourceTransferController
+    ResourceController,
+    ResourceTransferController
 };
-use App\Http\Controllers\MegaWarehouse\WarehouseController;
+use App\Http\Controllers\MegaWarehouse\{
+    WarehouseController,
+    WarehouseTransactionController
+};
 use App\Http\Controllers\Production\AlcoholicController;
 
 // Pagina principale
@@ -152,16 +173,20 @@ Route::get('/stalls/{stall}/supplies/create', [SupplyController::class, 'create'
 Route::post('/stalls/{stall}/supplies/store', [SupplyController::class, 'store'])->name('supplies.store');
 Route::get('/markets/pricing', [LocalMarketController::class, 'pricing'])->name('localmarket.pricing');
 Route::resource('orders', OnlineOrderController::class)->only(['store', 'index']);
-Route::post('/orders
-
-/{id}/confirm', [OnlineOrderController::class, 'confirm'])->name('orders.confirm');
+Route::post('/orders/{id}/confirm', [OnlineOrderController::class, 'confirm'])->name('orders.confirm');
 Route::post('/orders/{id}/cancel', [OnlineOrderController::class, 'cancel'])->name('orders.cancel');
 Route::get('/orders/history', [OnlineOrderController::class, 'history'])->name('orders.history');
+Route::get('/market/check-stock', [LocalMarketController::class, 'checkStock'])->name('localmarket.checkStock');
 
 // MegaWarehouse
 Route::get('/warehouse', [WarehouseController::class, 'index'])->name('mega.warehouse');
 Route::post('/warehouse/order/{id}/process', [WarehouseController::class, 'processOrder'])->name('mega.warehouse.process');
 Route::get('/warehouse/reports', [WarehouseController::class, 'dashboard'])->name('warehouse.reports');
-```
+Route::prefix('warehouse-transactions')->middleware(['auth'])->group(function () {
+    Route::get('/', [WarehouseTransactionController::class, 'index'])->name('warehouse.transactions.index');
+    Route::post('/', [WarehouseTransactionController::class, 'store'])->name('warehouse.transactions.store');
+    Route::get('/{id}', [WarehouseTransactionController::class, 'show'])->name('warehouse.transactions.show');
+});
+Route::get('/warehouse/donations', [WarehouseController::class, 'donationDashboard'])->name('warehouse.donations');
 
-Ora i `use` sono raggruppati per namespace, migliorando la leggibilità e la gestione del codice.
+Route::get('/warehouse/check-stock', [WarehouseController::class, 'checkStock'])->name('warehouse.checkStock');

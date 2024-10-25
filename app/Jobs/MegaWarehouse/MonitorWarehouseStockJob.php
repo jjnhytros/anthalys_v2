@@ -3,6 +3,7 @@
 namespace App\Jobs\MegaWarehouse;
 
 use App\Models\City\Message;
+use App\Events\LowStockDetected;
 use Illuminate\Queue\SerializesModels;
 use App\Models\MegaWarehouse\Warehouse;
 use Illuminate\Queue\InteractsWithQueue;
@@ -21,6 +22,8 @@ class MonitorWarehouseStockJob implements ShouldQueue
         $lowStockItems = Warehouse::whereColumn('quantity', '<', 'min_quantity')->get();
 
         foreach ($lowStockItems as $stockItem) {
+            event(new LowStockDetected($stockItem));
+
             $this->initiateRestock($stockItem);
             $this->notifyLowStock($stockItem);
         }
