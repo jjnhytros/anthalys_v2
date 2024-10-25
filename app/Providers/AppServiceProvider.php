@@ -21,7 +21,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // $jj = User::find(4);
-        // Auth::login($jj);
+        $jj = User::find(4);
+        Auth::login($jj);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\City;
 use App\Models\City\Citizen;
 use Illuminate\Http\Request;
 use App\Models\City\District;
+use App\Models\City\Occupation;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Recycling\RecyclingActivity;
@@ -151,5 +152,13 @@ class CitizenController extends Controller
 
         // Inviare una notifica o un premio collettivo
         // Logica per aggiornare infrastrutture, fornire benefici, ecc.
+    }
+
+    public function assignOccupation(Citizen $citizen, Occupation $occupation)
+    {
+        $citizen->occupation_id = $occupation->id;
+        $citizen->save();
+
+        return response()->json(['message' => 'Occupazione assegnata con successo']);
     }
 }

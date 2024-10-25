@@ -52,6 +52,17 @@ class Citizen extends Model
         return $this->hasMany(Building::class, 'citizen_id'); // Assumendo che un cittadino possa avere più edifici
     }
 
+    public function skills()
+    {
+        return $this->hasMany(Skill::class);
+    }
+
+    public function occupation()
+    {
+        return $this->belongsTo(Occupation::class);
+    }
+
+
     public function scopeSupplier($query)
     {
         return $query->where('role', 'supplier');
@@ -62,6 +73,35 @@ class Citizen extends Model
         return $query->where('role', 'vendor');
     }
 
+    public function increaseExperience($field, $amount)
+    {
+        $currentExperience = $this->experience[$field];
+        $nextLevel = $this->experience_levels[$field];
+
+        while ($amount > 0) {
+            $levelData = ExperienceLevel::where('level', $nextLevel + 1)->first();
+
+            // Controlla se il livello massimo è raggiunto
+            if (!$levelData) break;
+
+            $requiredExperience = $levelData->experience_required - $currentExperience;
+
+            // Calcola se l'utente può passare al prossimo livello
+            if ($amount >= $requiredExperience) {
+                $amount -= $requiredExperience;
+                $currentExperience = 0;
+                $nextLevel++;
+            } else {
+                $currentExperience += $amount;
+                $amount = 0;
+            }
+        }
+
+        // Aggiorna esperienza e livello
+        $this->experience[$field] = $currentExperience;
+        $this->experience_levels[$field] = $nextLevel;
+        $this->save();
+    }
 
     /**
      * Calcola le tasse basate sulla politica fiscale attiva
@@ -195,5 +235,46 @@ class Citizen extends Model
             'is_email' => false,
             'status' => 'unread',
         ]);
+    }
+
+    public function assignOccupation(Occupation $occupation)
+    {
+        $this->occupation()->associate($occupation);
+        $this->save();
+    }
+
+    public function increaseSkill($skillName, $points)
+    {
+        $skill = $this->skills()->where('name', $skillName)->first();
+
+        if (!$skill) {
+            $skill = $this->skills()->create(['name' => $skillName, 'level' => 1, 'experience' => 0]);
+        }
+
+        $levelMax = CitizenSkill::max('level');
+        $experienceRequired = CitizenSkill::where('level', $skill->level)->value('experience_required');
+
+        if ($skill->experience + $points >= $experienceRequired && $skill->level < $levelMax) {
+            $skill->level++;
+            $skill->experience = 0;
+        } else {
+            $skill->experience += $points;
+        }
+
+        $skill->save();
+    }
+
+    public function isEligibleForOccupation(Occupation $occupation)
+    {
+        $hasRequiredSkill = !$occupation->min_required_skill_id ||
+            $this->skills()->where('skill_id', $occupation->min_required_skill_id)
+            ->where('level', '>=', $occupation->min_other_occupation_level)
+            ->exists();
+
+        $hasReputation = $this->reputation >= $occupation->min_reputation;
+
+        $meetsOccupationLevel = $this->careers()->where('level', '>=', $occupation->min_other_occupation_level)->exists();
+
+        return $hasRequiredSkill && $hasReputation && $meetsOccupationLevel;
     }
 }

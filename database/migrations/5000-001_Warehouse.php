@@ -19,7 +19,6 @@ return new class extends Migration
             $table->date('expiry_date')->nullable();
             $table->decimal('energy_usage', 12, 2)->default(0); // Consumo energetico totale in kWh
             $table->integer('min_quantity')->default(10)->after('quantity'); // Quantità minima per il riordino
-            $table->date('expiry_date')->nullable();
             $table->enum('storage_type', ['ambient', 'refrigerated', 'frozen'])->default('ambient');
             $table->integer('reorder_quantity')->default(50)->after('min_quantity'); // Quantità da riordinare automaticamente
             $table->string('status');

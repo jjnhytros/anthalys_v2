@@ -21,6 +21,7 @@ use App\Http\Controllers\City\{
     NotificationController,
     LocalMarketController,
     ProductionReportController,
+    EmploymentCenterController,
     InfrastructureController
 };
 use App\Http\Controllers\Market\{
@@ -190,3 +191,10 @@ Route::prefix('warehouse-transactions')->middleware(['auth'])->group(function ()
 Route::get('/warehouse/donations', [WarehouseController::class, 'donationDashboard'])->name('warehouse.donations');
 
 Route::get('/warehouse/check-stock', [WarehouseController::class, 'checkStock'])->name('warehouse.checkStock');
+
+Route::prefix('employment')->group(function () {
+    Route::get('/', [EmploymentCenterController::class, 'index'])->name('employment.index');
+    Route::get('/{id}', [EmploymentCenterController::class, 'show'])->name('employment.show');
+    Route::post('/apply/{occupationId}', [EmploymentCenterController::class, 'apply'])->name('employment.apply');
+    Route::get('/employment/search', [EmploymentCenterController::class, 'search'])->name('employment.search');
+});
