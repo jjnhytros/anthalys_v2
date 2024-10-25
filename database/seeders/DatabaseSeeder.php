@@ -22,12 +22,11 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->call([
-            CitySeeder::class,
+            CityAndCitizenSeeder::class,
             BuildingSeeder::class,
             ResourceSeeder::class,
             InfrastructureSeeder::class,
             EventSeeder::class,
-            CitizenSeeder::class,
             WasteTypeSeeder::class,
             WasteTreatmentSeeder::class,
             SeasonSeeder::class,

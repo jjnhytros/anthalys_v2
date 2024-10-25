@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\City\Message;
 use App\Models\City\District;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
@@ -37,6 +38,18 @@ class TransferResourcesJob implements ShouldQueue
             // Aggiungi risorse al distretto di destinazione
             $this->toDistrict->{$this->resourceType} += $this->amount;
             $this->toDistrict->save();
+
+            // Notifica il trasferimento
+            Message::create([
+                'sender_id' => 2, // ID del governo
+                'recipient_id' => $this->toDistrict->manager_id,
+                'subject' => 'Trasferimento Risorse',
+                'body' => "Sono state trasferite {$this->amount} unità di {$this->resourceType} dal distretto {$this->fromDistrict->name} al distretto {$this->toDistrict->name}.",
+                'is_read' => false,
+                'is_archived' => false,
+                'is_notification' => true,
+                'created_at' => now(),
+            ]);
         }
     }
 }

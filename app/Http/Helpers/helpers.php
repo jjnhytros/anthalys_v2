@@ -18,21 +18,18 @@ use Illuminate\Support\Facades\Storage;
  */
 function multiexplode(array $delimiters = [], string $input = ''): array
 {
-    // Se l'input è vuoto, ritorna un array vuoto
+    static $cachedPattern = null;
+
     if (empty($input)) {
         return [];
     }
-
-    // Se i delimitatori sono vuoti, ritorna l'input come un singolo elemento
     if (empty($delimiters)) {
         return [$input];
     }
-
-    // Creazione di un pattern regex dai delimitatori per effettuare la divisione
-    $pattern = '/[' . preg_quote(implode('', $delimiters), '/') . ']/';
-
-    // Divisione dell'input usando il pattern e ritorno dei risultati
-    return preg_split($pattern, $input) ?: [$input];
+    if (!$cachedPattern) {
+        $cachedPattern = '/[' . preg_quote(implode('', $delimiters), '/') . ']/';
+    }
+    return preg_split($cachedPattern, $input) ?: [$input];
 }
 
 /**

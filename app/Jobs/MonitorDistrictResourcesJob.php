@@ -41,15 +41,18 @@ class MonitorDistrictResourcesJob implements ShouldQueue
                 // Invia una notifica personalizzata al governo (utente id 2) per risorse critiche
                 $government = Citizen::find(2)->user; // Recupera il governo (utente id 2)
 
-                // Usa il metodo di notifica personalizzato
-                $government->sendNotification(
-                    'Risorsa Critica',
-                    'La risorsa ' . $resource->name . ' nel distretto ' . $this->district->name . ' ha raggiunto un livello critico.',
-                    [
-                        'url' => url('/districts/' . $this->district->id),
-                        'type' => 'warning',
-                    ]
-                );
+                foreach ($resources as $resource) {
+                    if ($resource->quantity <= $resource->critical_level) {
+                        $government->sendNotification(
+                            'Risorsa Critica',
+                            'La risorsa ' . $resource->name . ' nel distretto ' . $this->district->name . ' ha raggiunto un livello critico.',
+                            [
+                                'url' => url('/districts/' . $this->district->id),
+                                'type' => 'warning',
+                            ]
+                        );
+                    }
+                }
                 $this->district->updateResourceProduction();
             }
         }

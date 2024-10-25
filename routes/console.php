@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\City\District;
+use App\Models\Agricolture\Crop;
+use App\Models\Agricolture\Farm;
 use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('simulate:daily')->daily();
@@ -21,6 +23,11 @@ Schedule::call(function () {
         \App\Jobs\UpdateDistrictPopulationJob::dispatch($district->id);
     }
 })->daily();
+
+Schedule::call(function () {
+    \App\Jobs\MonitorCropGrowth::dispatch();
+})->everyThirtyMinutes();
+
 Schedule::call(function () {
     $districts = District::all();
     foreach ($districts as $district) {
@@ -29,5 +36,25 @@ Schedule::call(function () {
         \App\Jobs\MonitorResourceLevelsJob::dispatch($district);
         \App\Jobs\MonitorResourceSurplusJob::dispatch($district);
         \App\Jobs\MonitorResourceDeficitJob::dispatch($district);
+        \App\Jobs\MonitorGreenhouseResources::dispatch();
     }
 })->hourly();
+Schedule::job(new \App\Jobs\SimulateUnexpectedEvent())->hourly();
+
+Schedule::call(function () {
+    $farms = Farm::all();
+    foreach ($farms as $farm) {
+        \App\Jobs\UpdateFarmProduction::dispatch($farm);
+    }
+})->daily();
+Schedule::job(new \App\Jobs\UpdateProductPricesJob())->daily();
+Schedule::job(new \App\Jobs\MegaWarehouse\CheckAndRestockProductsJob())->dailyAt('01:00');
+Schedule::job(new \App\Jobs\MegaWarehouse\ProcessWarehouseWasteJob())->daily();
+
+Schedule::job(new \App\Jobs\MegaWarehouse\ProcessCompostJob())->weekly();
+
+Schedule::call(function () {
+    \App\Jobs\GenerateMonthlyProductionReport::dispatch();
+    \App\Jobs\MegaWarehouse\GenerateWarehouseReportJob::dispatch();
+    \App\Jobs\MegaWarehouse\DistributeCompostJob::dispatch();
+})->monthlyOn(1, '00:00');

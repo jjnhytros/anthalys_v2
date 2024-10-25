@@ -19,9 +19,11 @@ class CityController extends Controller
         $city = City::with(['districts.buildings', 'districts.infrastructures', 'districts.resources'])->first();
 
         // Riepilogo del consumo totale delle risorse per la città
-        $totalEnergyConsumption = $city->districts->sum(function ($district) {
-            return $district->buildings->sum('energy_consumption');
-        });
+        $city = City::with([
+            'districts.buildings' => function ($query) {
+                $query->selectRaw('sum(energy_consumption) as totalEnergy, sum(water_consumption) as totalWater, sum(food_consumption) as totalFood');
+            },
+        ])->first();
         $totalWaterConsumption = $city->districts->sum(function ($district) {
             return $district->buildings->sum('water_consumption');
         });

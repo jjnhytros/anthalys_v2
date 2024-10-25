@@ -40,8 +40,6 @@ class City extends Model
             ['name' => 'Nuovo Edificio B', 'type' => 'Commerciale', 'floors' => rand(3, 8), 'height' => rand(10, 30), 'energy_consumption' => rand(1000, 3000), 'water_consumption' => rand(300, 1000), 'food_consumption' => 0],
         ];
 
-        foreach ($newBuildings as $building) {
-            $district->buildings()->create($building);
-        }
+        $district->buildings()->insert($newBuildings);
     }
 }
