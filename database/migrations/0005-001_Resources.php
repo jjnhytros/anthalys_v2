@@ -14,6 +14,8 @@ return new class extends Migration
         Schema::create('resources', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->decimal('price', 12, 2)->default(1.0);
+
             $table->decimal('quantity', 12, 2)->default(0); // Quantità totale
             $table->decimal('produced', 12, 2)->default(0); // Quantità prodotta
             $table->decimal('consumed', 12, 2)->default(0); // Quantità consumata
@@ -27,6 +29,7 @@ return new class extends Migration
             $table->decimal('surplus_limit', 12, 2)->default(1000); // Limite oltre il quale è considerato surplus
             $table->decimal('deficit_limit', 12, 2)->default(200);  // Limite sotto il quale è considerato deficit
             $table->integer('priority')->default(1); // Priorità delle risorse: 1 = alta, 3 = bassa
+            $table->integer('availability')->default(100); // Percentuale di disponibilità
 
             $table->timestamps();
         });

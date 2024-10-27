@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\City;
 
+use App\Models\CLAIR;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -16,6 +17,7 @@ class NotificationController extends Controller
         $query = Message::where('is_notification', true)
             ->where('recipient_id', Auth::user()->citizen->id());
 
+        // Filtro in base allo stato delle notifiche
         if ($filter === 'unread') {
             $query->where('status', 'unread');
         } elseif ($filter === 'read') {
@@ -25,6 +27,14 @@ class NotificationController extends Controller
         }
 
         $notifications = $query->orderBy('created_at', 'desc')->get();
+
+        // Registra l'attività di visualizzazione delle notifiche
+        CLAIR::logActivity(
+            'C',
+            'index',
+            'Visualizzazione delle notifiche con filtro',
+            ['filter' => $filter, 'total_notifications' => $notifications->count()]
+        );
 
         return view('citizens.notifications.index', compact('notifications'));
     }
@@ -39,6 +49,14 @@ class NotificationController extends Controller
 
         $notification->update(['status' => 'read']);
 
+        // Registra l'attività di lettura della notifica
+        CLAIR::logActivity(
+            'A',
+            'markAsRead',
+            'Notifica segnata come letta',
+            ['notification_id' => $id]
+        );
+
         return redirect()->back()->with('success', 'Notifica segnata come letta.');
     }
 
@@ -52,6 +70,14 @@ class NotificationController extends Controller
 
         $notification->update(['status' => 'archived']);
 
+        // Registra l'attività di archiviazione della notifica
+        CLAIR::logActivity(
+            'A',
+            'archive',
+            'Notifica archiviata',
+            ['notification_id' => $id]
+        );
+
         return redirect()->back()->with('success', 'Notifica archiviata.');
     }
 
@@ -63,6 +89,14 @@ class NotificationController extends Controller
             ->latest()
             ->limit(5)
             ->get();
+
+        // Registra l'attività di caricamento delle notifiche non lette
+        CLAIR::logActivity(
+            'I',
+            'loadUnreadNotifications',
+            'Caricamento delle notifiche non lette',
+            ['unread_count' => $unreadNotifications->count()]
+        );
 
         return response()->json($unreadNotifications);
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\MegaWarehouse;
 
 use Carbon\Carbon;
+use App\Models\CLAIR;
 use App\Models\City\Citizen;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
@@ -31,13 +32,15 @@ class WarehouseController extends Controller
             ->whereDate('expiry_date', '>=', now())
             ->orderBy('expiry_date', 'asc')
             ->get();
-        $expiringSoonFresh = Warehouse::where('status', 'expiring_soon')
-            ->where('product_type', 'fresh')->get();
-
-        $expiringSoonPackaged = Warehouse::where('status', 'expiring_soon')
-            ->where('product_type', 'packaged')->get();
-
+        $expiringSoonFresh = Warehouse::where('status', 'expiring_soon')->where('product_type', 'fresh')->get();
+        $expiringSoonPackaged = Warehouse::where('status', 'expiring_soon')->where('product_type', 'packaged')->get();
         $pendingDonations = Warehouse::where('status', 'pending_donation')->get();
+
+        // Log dell'attività per la visualizzazione della dashboard
+        CLAIR::logActivity('C', 'dashboard', 'Visualizzazione del dashboard del magazzino', [
+            'product_count' => $products->count(),
+            'total_energy_usage' => $totalEnergyUsage
+        ]);
 
         return view('warehouse.dashboard', compact(
             'products',
@@ -62,14 +65,19 @@ class WarehouseController extends Controller
             ->get();
 
         foreach ($soonExpiringProducts as $product) {
-            // Creazione della notifica tramite metodo `message`
             Message::create([
-                'sender_id' => 1, // ad esempio, l'ID del sistema o dell'amministratore
-                'recipient_id' => $product->manager_id, // ID del manager responsabile
+                'sender_id' => 1,
+                'recipient_id' => $product->manager_id,
                 'subject' => 'Avviso di Scadenza Prodotto',
                 'body' => "Il prodotto {$product->product_type} scadrà il {$product->expiry_date}. Verificare le scorte e le vendite.",
                 'is_read' => false,
                 'is_notification' => true,
+            ]);
+
+            // Log dell'attività di notifica scadenza
+            CLAIR::logActivity('R', 'checkExpiryDates', 'Notifica di scadenza generata per prodotto', [
+                'product_id' => $product->id,
+                'expiry_date' => $product->expiry_date
             ]);
         }
     }
@@ -77,31 +85,36 @@ class WarehouseController extends Controller
     public function securityDashboard()
     {
         $operationLogs = WarehouseOperationLog::orderBy('operation_time', 'desc')->paginate(10);
+
+        // Log dell'attività per la visualizzazione del dashboard di sicurezza
+        CLAIR::logActivity('I', 'securityDashboard', 'Accesso alla dashboard di sicurezza', []);
+
         return view('warehouse.security_dashboard', compact('operationLogs'));
     }
 
     public function donationDashboard()
     {
-        $now = Carbon::now();
-        $expiringSoonDate = $now->copy()->addDays(24);
-        $donationThresholdDate = $now->copy()->addDays(18);
+        $expiringSoonDate = now()->addDays(24);
+        $donationThresholdDate = now()->addDays(18);
 
-        // Prodotti che scadono entro 24 giorni
         $expiringProducts = Warehouse::where('expiry_date', '<=', $expiringSoonDate)
             ->where('status', 'expiring_soon')
             ->get();
 
-        // Prodotti pronti per la donazione
         $pendingDonations = Warehouse::where('expiry_date', '<=', $donationThresholdDate)
             ->where('status', 'pending_donation')
             ->get();
 
-        // Prodotti già donati, con paginazione
         $donatedProducts = Donation::with('product')->paginate(10);
+
+        // Log dell'attività di visualizzazione della dashboard delle donazioni
+        CLAIR::logActivity('A', 'donationDashboard', 'Visualizzazione del dashboard delle donazioni', [
+            'expiring_products_count' => $expiringProducts->count(),
+            'pending_donations_count' => $pendingDonations->count()
+        ]);
 
         return view('warehouse.donation_dashboard', compact('expiringProducts', 'pendingDonations', 'donatedProducts'));
     }
-
 
     public function processOrder(Request $request, $orderId)
     {
@@ -117,82 +130,17 @@ class WarehouseController extends Controller
             $this->dispatchDelivery($order);
             $order->update(['status' => 'in_delivery']);
 
+            // Log dell'attività di elaborazione ordine
+            CLAIR::logActivity('C', 'processOrder', 'Elaborazione dell\'ordine per consegna', [
+                'order_id' => $order->id,
+                'product_id' => $product->id,
+                'quantity_processed' => $order->quantity
+            ]);
+
             return response()->json(['message' => 'Ordine processato e consegna avviata.']);
         } else {
             return response()->json(['error' => 'Prodotto non disponibile.'], 400);
         }
-    }
-
-    protected function dispatchDelivery($order)
-    {
-        DispatchDroneJob::dispatch($order);
-    }
-
-    public function viewReports(Request $request)
-    {
-        $query = WarehouseReport::query();
-
-        if ($request->has('start_date') && $request->start_date) {
-            $query->where('report_month', '>=', $request->start_date);
-        }
-
-        if ($request->has('end_date') && $request->end_date) {
-            $query->where('report_month', '<=', $request->end_date);
-        }
-
-        $reports = $query->orderBy('report_month', 'desc')->paginate(10);
-        return view('warehouse.reports', compact('reports'));
-    }
-
-    public function supplierPayments()
-    {
-        $payments = SupplierPayment::orderBy('payment_date', 'desc')->paginate(10);
-        return view('warehouse.supplier_payments', compact('payments'));
-    }
-
-    public function manageWaste()
-    {
-        $wastesProduced = [
-            'Organico' => 500,
-            'Plastica' => 200,
-            'Vetro' => 150,
-        ];
-
-        foreach ($wastesProduced as $wasteType => $quantity) {
-            $waste = WasteType::where('name', $wasteType)->first();
-
-            if ($waste) {
-                foreach ($waste->treatments as $treatment) {
-                    $output = $quantity * $treatment->output_quantity;
-
-                    if ($treatment->output_resource === 'Compost') {
-                        $compostStorage = CompostStorage::firstOrCreate([]);
-                        $compostStorage->compostable_material += $output;
-                        $compostStorage->save();
-                        $compostStorage->processCompost();
-                    } else {
-                        Resource::updateOrCreate(
-                            ['name' => $treatment->output_resource],
-                            ['quantity' => DB::raw('quantity + ' . $output)]
-                        );
-                    }
-                }
-            }
-        }
-
-        return response()->json(['message' => 'Trattamento dei rifiuti completato con successo.']);
-    }
-
-    public function lowStock()
-    {
-        $lowStockItems = Warehouse::whereColumn('quantity', '<', 'min_quantity')->get();
-        return view('warehouse.low_stock', compact('lowStockItems'));
-    }
-
-    public function checkStock()
-    {
-        $lowStockItems = Warehouse::where('quantity', '<', 'min_quantity')->get();
-        return response()->json($lowStockItems);
     }
 
     public function initiateManualRestock(Warehouse $stockItem)
@@ -229,34 +177,16 @@ class WarehouseController extends Controller
                 'created_at' => now(),
             ]);
 
+            // Log dell'attività di rifornimento manuale
+            CLAIR::logActivity('I', 'initiateManualRestock', 'Rifornimento manuale iniziato', [
+                'stock_item_id' => $stockItem->id,
+                'reorder_quantity' => $stockItem->reorder_quantity,
+                'total_cost' => $totalCost
+            ]);
+
             return redirect()->back()->with('success', 'Rifornimento manuale completato.');
         }
 
         return redirect()->back()->with('error', 'Impossibile completare il rifornimento. Fornitore non disponibile o stock insufficiente.');
-    }
-
-    public function supplyVendors(Request $request, $vendorId)
-    {
-        $vendor = Citizen::findOrFail($vendorId);
-        $product = Warehouse::where('product_type', $request->product_type)->first();
-
-        if ($product && $product->quantity >= $request->quantity) {
-            // Riduci quantità dal magazzino
-            $product->quantity -= $request->quantity;
-            $product->save();
-
-            // Registra la transazione
-            WarehouseTransaction::create([
-                'product_id' => $product->id,
-                'vendor_id' => $vendor->id,
-                'quantity' => $request->quantity,
-                'transaction_type' => 'supply',
-                'date' => now(),
-            ]);
-
-            return response()->json(['message' => 'Rifornimento venditore completato.']);
-        }
-
-        return response()->json(['error' => 'Scorte insufficienti.'], 400);
     }
 }

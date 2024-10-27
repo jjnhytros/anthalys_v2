@@ -5,52 +5,59 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Console\Commands\SimulateGovernmentPolicies;
 use App\Http\Controllers\City\{
-    TaxController,
     ChatController,
-    CityController,
-    DroneController,
-    EmailController,
-    RobotController,
-    PolicyController,
-    RewardController,
     CitizenController,
-    SubsidyController,
+    CityController,
+    DashboardController,
     DistrictController,
-    MigrationController,
-    GovernmentController,
-    NotificationController,
-    LocalMarketController,
-    ProductionReportController,
+    DroneController,
+    EconomyController,
+    EmailController,
     EmploymentCenterController,
-    InfrastructureController
+    GovernmentController,
+    InfrastructureController,
+    LocalMarketController,
+    MaterialAnalysisController,
+    MigrationController,
+    NotificationController,
+    PolicyController,
+    ProductionReportController,
+    RewardController,
+    RobotController,
+    SubsidyController,
+    TaxController,
+    TimeController,
 };
 use App\Http\Controllers\Market\{
+    MarketProductController,
+    OnlineOrderController,
+    ProductReviewController,
     StallController,
     SupplyController,
-    OnlineOrderController,
-    MarketProductController,
-    ProductReviewController
 };
 use App\Http\Controllers\Agricolture\{
+    AgriculturalController,
+    AnimalController,
+    AquacultureController,
     CropController,
     FarmController,
-    AnimalController,
-    SensorController,
+    FarmDashboardController,
     GreenhouseController,
-    AquacultureController,
-    AgriculturalController,
-    FarmDashboardController
+    SensorController,
 };
 use App\Http\Controllers\Recycling\BonusController;
 use App\Http\Controllers\Resource\{
     ResourceController,
-    ResourceTransferController
+    ResourceTransferController,
 };
 use App\Http\Controllers\MegaWarehouse\{
     WarehouseController,
     WarehouseTransactionController
 };
 use App\Http\Controllers\Production\AlcoholicController;
+
+Route::get('/time/get', [TimeController::class, 'calculateElapsedTime']);
+
 
 // Pagina principale
 Route::get('/', [CityController::class, 'index'])->name('home');
@@ -63,6 +70,8 @@ Route::prefix('cities')->middleware(['auth'])->group(function () {
     Route::resource('/', CityController::class);
     Route::post('/{city}/increase-production', [CityController::class, 'increaseResourceProduction'])->name('city.increaseProduction');
     Route::resource('{city}/districts', DistrictController::class);
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/map', [DashboardController::class, 'map'])->name('map');
 });
 
 // Rotte per il governo con prefix government
@@ -79,6 +88,9 @@ Route::prefix('resources')->middleware(['auth'])->group(function () {
     Route::get('/analysis', [ResourceController::class, 'index'])->name('resources.analysis');
     Route::get('/transfer', [ResourceController::class, 'transferView'])->name('resource.transfer');
     Route::post('/transfer', [ResourceTransferController::class, 'transfer'])->name('resource.transfer');
+    Route::get('/real-time-monitoring', [ResourceController::class, 'realTimeMonitoring'])->name('resources.real_time_monitoring');
+    Route::get('/send-alerts', [ResourceController::class, 'sendResourceAlerts'])->name('resources.send_alerts');
+    Route::get('/update-history', [ResourceController::class, 'updateResourceHistory'])->name('resources.update_history');
 });
 
 // Infrastrutture
@@ -97,9 +109,6 @@ Route::prefix('citizens')->middleware(['auth'])->group(function () {
     Route::get('/rewards', [RewardController::class, 'index'])->name('rewards.index');
     Route::post('/rewards/{reward}/redeem', [RewardController::class, 'redeem'])->name('rewards.redeem');
 });
-
-// Migrazioni
-Route::get('/migrations', [MigrationController::class, 'index'])->name('migrations.index');
 
 // Email
 Route::prefix('emails')->middleware(['auth'])->group(function () {
@@ -148,7 +157,7 @@ Route::resource('alcoholics', AlcoholicController::class)->middleware('auth');
 Route::post('/bonus/recycling/{citizen}/{amountRecycled}', [BonusController::class, 'rewardRecycling']);
 Route::post('/bonus/improvement/{citizen}/{activityType}', [BonusController::class, 'rewardCityImprovement']);
 Route::post('/bonus/sustainability/{citizen}', [BonusController::class, 'rewardSustainableActivities']);
-Route::post('/impose-fines', [TaxController::class, 'imposeFinesForNonCompliance']);
+Route::post('/impose-fines', [CitizenController::class, 'imposeFinesForNonCompliance']);
 Route::post('/distribute-subsidies', [SubsidyController::class, 'distributeSubsidies']);
 
 // Risorse per le fattorie, coltivazioni, allevamento
@@ -198,3 +207,6 @@ Route::prefix('employment')->group(function () {
     Route::post('/apply/{occupationId}', [EmploymentCenterController::class, 'apply'])->name('employment.apply');
     Route::get('/employment/search', [EmploymentCenterController::class, 'search'])->name('employment.search');
 });
+
+Route::get('/economy/{city}', [EconomyController::class, 'showEconomy']);
+Route::get('/material/{material}', [MaterialAnalysisController::class, 'showMaterialAnalysis']);

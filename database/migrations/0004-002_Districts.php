@@ -32,6 +32,10 @@ return new class extends Migration
             $table->decimal('technology_level', 5, 2)->default(1.0); // Livello tecnologico (1.0 = standard)
             $table->decimal('tax_rate', 5, 2)->nullable()->default(0); // Colonna per il tasso di tassazione
             $table->boolean('auto_sufficient')->nullable()->default(false); // Colonna per l’autosufficienza
+            $table->decimal('previous_demand', 12, 2)->default(0);
+            $table->decimal('current_demand', 12, 2)->default(0);
+            $table->decimal('surplus', 12, 2)->default(0); // Risorsa extra disponibile
+            $table->integer('priority')->default(1);  // 1: basso, 2: medio, 3: alto
 
             $table->foreignId('city_id')->constrained()->cascadeOnDelete(); // Collegamento alla città
             $table->timestamps();

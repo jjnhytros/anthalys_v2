@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\City;
 
 use App\Models\User;
+use App\Models\CLAIR;
 use Illuminate\Http\Request;
 use App\Models\City\District;
 use App\Models\City\Transaction;
@@ -15,53 +16,66 @@ class InfrastructureController extends Controller
     public function index(District $district)
     {
         $infrastructures = $district->infrastructures;
+
+        // Log dell'attività di visualizzazione delle infrastrutture
+        CLAIR::logActivity(
+            'C',
+            'index',
+            'Visualizzazione delle infrastrutture per il distretto',
+            ['district_id' => $district->id]
+        );
+
         return view('infrastructures.index', compact('district', 'infrastructures'));
     }
 
     public function create(District $district)
     {
+        // Log dell'attività di creazione di un'infrastruttura
+        CLAIR::logActivity(
+            'C',
+            'create',
+            'Creazione di una nuova infrastruttura per il distretto',
+            ['district_id' => $district->id]
+        );
+
         return view('infrastructures.create', compact('district'));
     }
 
     public function store(Request $request, District $district)
     {
-        $district->infrastructures()->create($request->all());
+        $infrastructure = $district->infrastructures()->create($request->all());
+
+        // Log dell'attività di salvataggio dell'infrastruttura
+        CLAIR::logActivity(
+            'A',
+            'store',
+            'Salvataggio della nuova infrastruttura',
+            ['infrastructure_id' => $infrastructure->id]
+        );
+
         return redirect()->route('districts.infrastructures.index', $district);
     }
 
     public function maintain(Infrastructure $infrastructure)
     {
-        // Recupera l'utente "government"
         $government = User::where('name', 'government')->first();
-
-        // Costo base per la manutenzione
-        $baseMaintenanceCost = 1000; // Costo base fisso (può variare)
-
-        // Calcola l'usura dell'infrastruttura
-        $wearPercentage = 1 - $infrastructure->condition; // Usura in percentuale (es. 20% usura se condition = 0.8)
-
-        // Calcola il costo della manutenzione in base alla percentuale di usura
+        $baseMaintenanceCost = 1000;
+        $wearPercentage = 1 - $infrastructure->condition;
         $maintenanceCost = $baseMaintenanceCost * $wearPercentage;
 
-        // Se l'usura è zero (condizione = 1.00), non è necessaria la manutenzione
         if ($wearPercentage == 0) {
             return back()->with('info', 'L\'infrastruttura è già in ottime condizioni. Non è necessaria la manutenzione.');
         }
 
-        // Verifica se il governo ha fondi sufficienti per pagare la manutenzione
         if ($government->cash < $maintenanceCost) {
             return back()->withErrors(['error' => 'Fondi insufficienti per effettuare la manutenzione. Costo: ' . $maintenanceCost . ' €.']);
         }
 
-        // Riduci il bilancio del governo
         $government->cash -= $maintenanceCost;
         $government->save();
-
-        // Ripristina la condizione dell'infrastruttura al 100%
         $infrastructure->condition = 1.00;
         $infrastructure->save();
 
-        // Registra la manutenzione nello storico
         InfrastructureMaintenanceHistory::create([
             'infrastructure_id' => $infrastructure->id,
             'maintained_at' => now(),
@@ -72,51 +86,88 @@ class InfrastructureController extends Controller
             'description' => 'Manutenzione di ' . $infrastructure->name,
         ]);
 
+        // Log dell'attività di manutenzione dell'infrastruttura
+        CLAIR::logActivity(
+            'R',
+            'maintain',
+            'Manutenzione dell\'infrastruttura',
+            [
+                'infrastructure_id' => $infrastructure->id,
+                'cost' => $maintenanceCost,
+                'remaining_cash' => $government->cash
+            ]
+        );
+
         return back()->with('success', 'Manutenzione eseguita con successo! Costo: ' . $maintenanceCost . ' €. Bilancio rimanente: ' . $government->cash . ' €');
     }
 
     public function history(Infrastructure $infrastructure)
     {
         $maintenanceHistory = $infrastructure->maintenanceHistory;
+
+        // Log dell'attività di visualizzazione dello storico della manutenzione
+        CLAIR::logActivity(
+            'C',
+            'history',
+            'Visualizzazione dello storico di manutenzione per l\'infrastruttura',
+            ['infrastructure_id' => $infrastructure->id]
+        );
+
         return view('infrastructures.history', compact('infrastructure', 'maintenanceHistory'));
     }
+
     public function applyDeterioration()
     {
-        // Recupera tutte le infrastrutture
         $infrastructures = Infrastructure::all();
 
-        // Applica il deterioramento dinamico a ciascuna infrastruttura
         foreach ($infrastructures as $infrastructure) {
-            // Genera un valore casuale tra 1e-6 e 5e-6
             $deterioration = mt_rand(1, 5) * 1e-6;
-
-            // Riduci la condizione dell'infrastruttura (ma non scendere sotto 0)
             $infrastructure->condition = max($infrastructure->condition - $deterioration, 0);
             $infrastructure->efficiency = $infrastructure->condition;
-
-            // Salva l'infrastruttura con la condizione aggiornata
             $infrastructure->save();
+
+            // Log dell'attività di deterioramento per ciascuna infrastruttura
+            CLAIR::logActivity(
+                'R',
+                'applyDeterioration',
+                'Applicazione del deterioramento per l\'infrastruttura',
+                ['infrastructure_id' => $infrastructure->id, 'deterioration' => $deterioration]
+            );
         }
 
         return response()->json(['success' => true]);
     }
-    public function monitorInfrastructureEfficiency($infrastructure)
+
+    public function monitorInfrastructureEfficiency(Infrastructure $infrastructure)
     {
-        // Controlliamo se l'infrastruttura è sotto una certa soglia di efficienza
         if ($infrastructure->efficiency < 0.8) {
             $this->optimizeInfrastructure($infrastructure);
         }
 
+        // Log dell'attività di monitoraggio dell'efficienza dell'infrastruttura
+        CLAIR::logActivity(
+            'C',
+            'monitorInfrastructureEfficiency',
+            'Monitoraggio dell\'efficienza dell\'infrastruttura',
+            ['infrastructure_id' => $infrastructure->id, 'efficiency' => $infrastructure->efficiency]
+        );
+
         return response()->json(['efficiency' => $infrastructure->efficiency]);
     }
-    private function optimizeInfrastructure($infrastructure)
+
+    private function optimizeInfrastructure(Infrastructure $infrastructure)
     {
-        // Ottimizza l'infrastruttura migliorando la sua efficienza
         $infrastructure->efficiency += 0.1;
         $infrastructure->save();
 
-        // Notifica il governo dell'ottimizzazione
         $government = User::where('name', 'government')->first();
-        // $government->notify(new GovernmentNotification('L\'infrastruttura ' . $infrastructure->name . ' è stata ottimizzata.'));
+
+        // Log dell'attività di ottimizzazione dell'infrastruttura
+        CLAIR::logActivity(
+            'A',
+            'optimizeInfrastructure',
+            'Ottimizzazione dell\'infrastruttura',
+            ['infrastructure_id' => $infrastructure->id, 'new_efficiency' => $infrastructure->efficiency]
+        );
     }
 }

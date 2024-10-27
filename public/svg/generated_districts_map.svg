@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500">
+	<circle id="distretto1" cx="30" cy="30" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto2" cx="80" cy="30" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto3" cx="130" cy="30" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto4" cx="180" cy="30" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto5" cx="230" cy="30" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto6" cx="30" cy="80" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto7" cx="80" cy="80" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto8" cx="130" cy="80" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto9" cx="180" cy="80" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+	<circle id="distretto10" cx="230" cy="80" r="20" fill="lightgray" stroke="black" stroke-width="2"/>
+</svg>

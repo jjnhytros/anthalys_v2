@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Recycling;
 
+use App\Models\CLAIR;
 use App\Models\City\Citizen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -12,11 +13,10 @@ use App\Models\Recycling\RecyclingProgress;
 
 class RecyclingController extends Controller
 {
-    // Funzione per aggiornare i punti di riciclo in base al tipo e alla quantità
     public function addPoints(Request $request, Citizen $citizen)
     {
-        $wasteType = WasteType::find($request->waste_type_id); // Tipo di rifiuto
-        $quantity = $request->quantity; // Quantità di rifiuto riciclato
+        $wasteType = WasteType::find($request->waste_type_id);
+        $quantity = $request->quantity;
 
         // Sistema di punti in base al tipo di rifiuto
         $pointsPerKg = [
@@ -29,7 +29,7 @@ class RecyclingController extends Controller
             'Rifiuti Speciali' => 3,
         ];
 
-        $points = $pointsPerKg[$wasteType->name] * $quantity; // Calcola i punti
+        $points = $pointsPerKg[$wasteType->name] * $quantity;
 
         // Aggiungi i punti al cittadino
         $citizen->addRecyclingPoints($points);
@@ -41,6 +41,14 @@ class RecyclingController extends Controller
             'quantity' => $quantity,
         ]);
 
+        // Log dell'attività di assegnazione punti
+        CLAIR::logActivity('C', 'addPoints', 'Punti di riciclo assegnati al cittadino', [
+            'citizen_id' => $citizen->id,
+            'waste_type' => $wasteType->name,
+            'quantity' => $quantity,
+            'points_earned' => $points,
+        ]);
+
         return response()->json([
             'message' => 'Punti di riciclo assegnati e progresso salvato!',
             'citizen' => $citizen,
@@ -50,19 +58,17 @@ class RecyclingController extends Controller
 
     public function assignAnnualAwards()
     {
-        // Otteniamo l'anno corrente
         $currentYear = now()->year;
 
-        // Recuperiamo i cittadini che hanno ridotto al massimo i loro rifiuti
+        // Recupera i cittadini che hanno ridotto al massimo i loro rifiuti
         $topRecyclers = DB::table('citizens')
             ->join('recycling_progress', 'citizens.id', '=', 'recycling_progress.citizen_id')
             ->select('citizens.id', DB::raw('SUM(recycling_progress.points) as total_points'))
             ->groupBy('citizens.id')
             ->orderBy('total_points', 'desc')
-            ->take(10) // I primi 10 cittadini più virtuosi
+            ->take(10)
             ->get();
 
-        // Assegniamo un premio ai primi 10 cittadini
         foreach ($topRecyclers as $recycler) {
             RecyclingAward::create([
                 'citizen_id' => $recycler->id,
@@ -71,24 +77,43 @@ class RecyclingController extends Controller
             ]);
         }
 
+        // Log dell'attività di assegnazione dei premi annuali
+        CLAIR::logActivity('R', 'assignAnnualAwards', 'Premi annuali assegnati ai cittadini più virtuosi', [
+            'year' => $currentYear,
+            'top_recyclers' => $topRecyclers->pluck('id'),
+        ]);
+
         return redirect()->route('recycling.awards')->with('success', 'Premi annuali assegnati con successo!');
     }
 
     public function viewAwards()
     {
         $awards = RecyclingAward::with('citizen')->orderBy('year', 'desc')->get();
+
+        // Log dell'attività di visualizzazione dei premi
+        CLAIR::logActivity('I', 'viewAwards', 'Visualizzazione dei premi di riciclo');
+
         return view('recycling.awards', compact('awards'));
     }
+
     public function processRecycling(Citizen $citizen, Request $request)
     {
         $city = $citizen->city;
 
-        // Aggiorna i dati di risparmio delle risorse basati sul riciclo effettuato
+        // Aggiorna i dati di risparmio delle risorse
         $city->energy_saved += $request->input('energy_saved');
         $city->water_saved += $request->input('water_saved');
         $city->materials_saved += $request->input('materials_saved');
 
         $city->save();
+
+        // Log dell'attività di processazione del riciclo
+        CLAIR::logActivity('A', 'processRecycling', 'Aggiornamento dati di risparmio risorse per il riciclo', [
+            'citizen_id' => $citizen->id,
+            'energy_saved' => $request->input('energy_saved'),
+            'water_saved' => $request->input('water_saved'),
+            'materials_saved' => $request->input('materials_saved'),
+        ]);
 
         return redirect()->route('recycling.progress')->with('success', 'Riciclo processato con successo!');
     }

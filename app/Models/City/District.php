@@ -8,6 +8,7 @@ use App\Models\Recycling\DistrictRecyclingGoal;
 
 class District extends Model
 {
+    // Attributi riempibili
     protected $fillable = [
         'name',
         'population',
@@ -20,10 +21,12 @@ class District extends Model
         'technology_level'
     ];
 
+    // Relazioni
     public function city()
     {
         return $this->belongsTo(City::class);
     }
+
     public function manager()
     {
         return $this->belongsTo(Citizen::class, 'manager_id');
@@ -33,10 +36,12 @@ class District extends Model
     {
         return $this->hasMany(Building::class);
     }
+
     public function resources()
     {
         return $this->hasMany(Resource::class);
     }
+
     public function citizens()
     {
         return $this->hasManyThrough(Citizen::class, Building::class, 'district_id', 'residential_building_id');
@@ -46,10 +51,12 @@ class District extends Model
     {
         return $this->hasMany(Infrastructure::class);
     }
+
     public function recyclingGoals()
     {
         return $this->hasMany(DistrictRecyclingGoal::class);
     }
+
     public function migrationsFrom()
     {
         return $this->hasMany(Migration::class, 'from_district_id');
@@ -60,126 +67,158 @@ class District extends Model
         return $this->hasMany(Migration::class, 'to_district_id');
     }
 
-
-
+    // Funzioni di Trasferimento, Produzione e Vendita delle Risorse
     public function transferResourceTo(District $destination, string $resourceName, float $amount): bool
     {
-        // Calcola l'efficienza del trasferimento basata sulle infrastrutture
         $efficiency = $this->infrastructures()->avg('efficiency') ?? 1.00;
         $transferAmount = $amount * $efficiency;
-
-        // Recupera la risorsa dal distretto in base alla priorità
         $resource = $this->resources()->where('name', $resourceName)->orderBy('priority', 'asc')->first();
 
         if (!$resource || $resource->quantity < $transferAmount) {
-            return false; // Non ci sono abbastanza risorse per il trasferimento
+            return false;
         }
 
-        // Deduce la quantità di risorse dal distretto corrente
         $resource->quantity -= $transferAmount;
         $resource->save();
 
-        // Aggiunge la quantità al distretto di destinazione
         $destinationResource = $destination->resources()->where('name', $resourceName)->first();
         if (!$destinationResource) {
-            // Se il distretto destinatario non ha ancora questa risorsa, la creiamo
-            $destination->resources()->create([
-                'name' => $resourceName,
-                'quantity' => $amount,
-            ]);
+            $destination->resources()->create(['name' => $resourceName, 'quantity' => $amount]);
         } else {
             $destinationResource->quantity += $amount;
             $destinationResource->save();
         }
 
-        // Invia una notifica al governo sul trasferimento
         $this->sendTransferNotification($destination, $resourceName, $amount);
-
         return true;
     }
 
     public function calculateProductionEfficiency()
     {
-        // Calcola l'efficienza in base all'infrastruttura e al livello tecnologico
         $efficiency = $this->infrastructure_efficiency * $this->technology_level;
-
-        // Limita l'efficienza massima al 200% e minima al 50%
         return max(min($efficiency, 2.0), 0.5);
     }
+
     public function updateResourceProduction()
     {
-        // Recupera tutte le risorse prodotte nel distretto
         $resources = $this->resources;
-
         foreach ($resources as $resource) {
-            // Aumenta l'efficienza di produzione in base alle infrastrutture e tecnologia
             $infrastructureLevel = $this->calculateInfrastructureEfficiency();
             $technologyLevel = $this->calculateTechnologyEfficiency();
-
-            // Calcola il nuovo livello di produzione
             $newProduction = $resource->base_production * ($infrastructureLevel + $technologyLevel);
 
-            // Aggiorna la produzione della risorsa
             $resource->update(['production' => $newProduction]);
-
-            // Invia una notifica in caso di aggiornamenti significativi
             $this->sendEfficiencyNotification($resource, $newProduction);
         }
     }
+
     public function sellExcessResource(string $resourceName, float $excessAmount): bool
     {
         $resource = $this->resources()->where('name', $resourceName)->first();
-
         if (!$resource || $resource->quantity < $excessAmount) {
-            return false; // Non ci sono abbastanza risorse da vendere
+            return false;
         }
 
-        // Prezzo di vendita per unità di risorsa
         $pricePerUnit = $this->getResourceSalePrice($resourceName);
-
-        // Calcolo del profitto dalla vendita
         $totalProfit = $excessAmount * $pricePerUnit;
 
-        // Aggiornamento della quantità di risorse
         $resource->quantity -= $excessAmount;
         $resource->save();
 
-        // Aggiunge il profitto al bilancio del governo
         $government = Citizen::find(2)->user;
         $government->cash += $totalProfit;
         $government->save();
 
-        // Notifica il governo della vendita di risorse
         $this->sendSaleNotification($resourceName, $excessAmount, $totalProfit);
-
         return true;
     }
+
     public function getResourceSalePrice(string $resourceName): float
     {
-        // Imposta i prezzi delle risorse
         $prices = [
             'acqua' => 1.5,
             'energia' => 2.0,
             'cibo' => 3.0,
-            // Altri prezzi delle risorse
         ];
 
-        return $prices[$resourceName] ?? 1.0; // Prezzo predefinito se non specificato
+        return $prices[$resourceName] ?? 1.0;
     }
 
+    // Calcoli di Impatto per Tipologia di Edificio
+    public function calculateDistrictEducationImpact()
+    {
+        return $this->buildings->where('type', 'scuola')->sum->calculateLiteracyImpact();
+    }
 
+    public function calculateDistrictHealthImpact()
+    {
+        return $this->buildings->where('type', 'ospedale')->sum->calculateHealthImpact();
+    }
+
+    public function calculateDistrictAdministrativeImpact()
+    {
+        return $this->buildings->where('type', 'governativo')->sum->calculateAdministrativeImpact();
+    }
+
+    public function calculateDistrictFiscalContribution()
+    {
+        return $this->buildings->where('type', 'governativo')->sum->calculateFiscalContribution();
+    }
+
+    public function calculateDistrictCulturalImpact()
+    {
+        return $this->buildings->where('type', 'culturale')->sum->calculateCulturalImpact();
+    }
+
+    public function calculateDistrictEventIncome()
+    {
+        return $this->buildings->where('type', 'culturale')->sum->calculateEventIncome();
+    }
+
+    public function calculateDistrictTransportImpact()
+    {
+        return $this->buildings->where('type', 'trasporti')->sum->calculateTransportImpact();
+    }
+
+    public function calculateDistrictEnergyProduction()
+    {
+        return $this->buildings->where('type', 'energia')->sum->calculateEnergyProduction();
+    }
+
+    public function calculateDistrictWellbeingImpact()
+    {
+        return $this->buildings->where('type', 'ricreativo')->sum->calculateWellbeingImpact();
+    }
+
+    public function calculateDistrictTechnologyImpact()
+    {
+        return $this->buildings->where('type', 'comunicazione')->sum->calculateTechnologyImpact();
+    }
+
+    public function calculateDistrictRecyclingImpact()
+    {
+        return $this->buildings->where('type', 'gestione_rifiuti')->sum->calculateRecyclingImpact();
+    }
+
+    public function calculateDistrictSafetyImpact()
+    {
+        return $this->buildings->where('type', 'emergenza')->sum->calculateSafetyImpact();
+    }
+
+    public function calculateDistrictInnovationImpact()
+    {
+        return $this->buildings->where('type', 'ricerca')->sum->calculateInnovationImpact();
+    }
+
+    // Funzioni Notifica
     private function calculateInfrastructureEfficiency()
     {
-        // Supponiamo che ogni distretto abbia un livello di infrastrutture (da 0 a 1)
-        return $this->infrastructure_level ?? 0.7; // Valore predefinito
+        return $this->infrastructure_level ?? 0.7;
     }
-
 
     public function sendEfficiencyNotification($resource, $newProduction)
     {
-        // Invia una notifica al governo (utente id 2) sull'aggiornamento
         $government = Citizen::find(2)->user;
-
         $government->sendNotification(
             'Miglioramento della Produzione',
             'La produzione della risorsa ' . $resource->name . ' è stata ottimizzata a ' . athel($newProduction),
@@ -192,7 +231,6 @@ class District extends Model
 
     private function sendTransferNotification(District $destination, string $resourceName, float $amount)
     {
-        // Invia una notifica all'utente "government" (cittadino id 2)
         $government = Citizen::find(2)->user;
         $government->sendNotification(
             'Trasferimento Risorse',
@@ -203,6 +241,7 @@ class District extends Model
             ]
         );
     }
+
     private function sendSaleNotification(string $resourceName, float $amount, float $totalProfit)
     {
         $government = Citizen::find(2)->user;

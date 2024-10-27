@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\City;
 
+use App\Models\CLAIR;
 use App\Models\City\City;
 use App\Models\City\Citizen;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
 use App\Models\City\District;
+use App\Models\City\Migration;
 use App\Jobs\TransferResourcesJob;
 use App\Http\Controllers\Controller;
 
@@ -16,9 +18,31 @@ class DistrictController extends Controller
     {
         $city = City::first();
         $districts = $city->districts;
-        return view('districts.index', compact('city', 'districts'));
-    }
 
+        // Identifica i distretti con problemi di risorse o infrastrutture
+        $problematicDistricts = District::whereHas('resources', function ($query) {
+            $query->where('quantity', '<', 500);
+        })->orWhereHas('infrastructures', function ($query) {
+            $query->where('condition', '<', 0.5);
+        })->get();
+
+        // Recupera le migrazioni con i dati dei distretti di partenza e destinazione
+        $migrations = Migration::with('fromDistrict', 'toDistrict')->get();
+
+        // Registra l'attività di visualizzazione dei distretti e dei dati sulle migrazioni
+        CLAIR::logActivity(
+            'C',
+            'index',
+            'Visualizzazione dei distretti, migrazioni e distretti problematici',
+            [
+                'total_districts' => $districts->count(),
+                'total_migrations' => $migrations->count(),
+                'problematic_districts_count' => $problematicDistricts->count()
+            ]
+        );
+
+        return view('districts.index', compact('city', 'districts', 'migrations', 'problematicDistricts'));
+    }
 
     public function create(City $city)
     {
@@ -27,33 +51,31 @@ class DistrictController extends Controller
 
     public function store(Request $request, City $city)
     {
-        // Dati delle risorse attuali della città (Esempio)
         $availableResources = [
-            'Energia' => 100000, // Esempio di risorse disponibili
+            'Energia' => 100000,
             'Acqua' => 50000,
             'Cibo' => 30000,
         ];
 
-        // Simuliamo che nel form c'è un campo `resource_requirement` che contiene le risorse richieste
-        $requiredResources = json_decode($request->resource_requirement, true); // Decodifica in array
+        $requiredResources = json_decode($request->resource_requirement, true);
 
-        // Verifica delle risorse
         foreach ($requiredResources as $resourceName => $requiredAmount) {
             if ($requiredAmount > $availableResources[$resourceName]) {
                 return back()->withErrors(['Risorse insufficienti per creare il distretto.']);
             }
         }
 
-        // Se le risorse sono sufficienti, creiamo il nuovo distretto
-        $city->districts()->create($request->all());
+        $newDistrict = $city->districts()->create($request->all());
+
+        // Log della creazione del distretto
+        CLAIR::logActivity(
+            'A',
+            'store',
+            'Creazione di un nuovo distretto',
+            ['city_id' => $city->id, 'district_id' => $newDistrict->id]
+        );
 
         return redirect()->route('districts.index', $city)->with('success', 'Distretto creato con successo!');
-    }
-
-    public function resources(District $district)
-    {
-        $resources = $district->resources;
-        return view('resources.index', compact('district', 'resources'));
     }
 
     public function monitorResources(District $district)
@@ -65,9 +87,7 @@ class DistrictController extends Controller
         $totalWaterConsumption = $buildings->sum('water_consumption');
         $totalFoodConsumption = $buildings->sum('food_consumption');
 
-        $energyDistributed = 0;
-        $waterDistributed = 0;
-        $foodDistributed = 0;
+        $energyDistributed = $waterDistributed = $foodDistributed = 0;
 
         foreach ($infrastructures as $infrastructure) {
             if ($infrastructure->type == 'Rete Elettrica') {
@@ -78,6 +98,19 @@ class DistrictController extends Controller
                 $foodDistributed += $infrastructure->calculateDistributedResource($totalFoodConsumption);
             }
         }
+
+        // Log monitoraggio delle risorse del distretto
+        CLAIR::logActivity(
+            'I',
+            'monitorResources',
+            'Monitoraggio delle risorse del distretto',
+            [
+                'district_id' => $district->id,
+                'total_energy' => $totalEnergyConsumption,
+                'total_water' => $totalWaterConsumption,
+                'total_food' => $totalFoodConsumption,
+            ]
+        );
 
         return view('districts.resource_monitor', compact(
             'district',
@@ -90,44 +123,6 @@ class DistrictController extends Controller
         ));
     }
 
-    public function showRecyclingProgress(District $district)
-    {
-        // Ottieni tutti gli obiettivi di riciclo per il distretto
-        $recyclingGoals = $district->recyclingGoals;
-
-        return view('districts.recycling_progress', compact('district', 'recyclingGoals'));
-    }
-
-    public function showEnvironmentalImpact(District $district)
-    {
-        // Sommiamo le emissioni, i consumi energetici, idrici e l'impatto sulla biodiversità
-        $totalCO2Emissions = $district->infrastructures->sum('co2_emissions');
-        $totalEnergyConsumption = $district->infrastructures->sum('energy_consumption');
-        $totalWaterConsumption = $district->infrastructures->sum('water_consumption');
-        $totalBiodiversityImpact = $district->infrastructures->avg('biodiversity_impact'); // Media impatto biodiversità
-
-        return view('districts.environmental_impact', compact(
-            'district',
-            'totalCO2Emissions',
-            'totalEnergyConsumption',
-            'totalWaterConsumption',
-            'totalBiodiversityImpact'
-        ));
-    }
-
-    public function showResources()
-    {
-        $districts = District::all();
-        return view('districts.resources', compact('districts'));
-    }
-
-    public function showTransferForm($id)
-    {
-        $district = District::findOrFail($id);
-        $otherDistricts = District::where('id', '!=', $district->id)->get();
-        return view('districts.transfer', compact('district', 'otherDistricts'));
-    }
-
     public function transferResources(Request $request)
     {
         $fromDistrict = District::findOrFail($request->input('from_district_id'));
@@ -135,52 +130,50 @@ class DistrictController extends Controller
         $resourceType = $request->input('resource_type');
         $amount = $request->input('amount');
 
-        // Esegui il job per trasferire le risorse
         TransferResourcesJob::dispatch($fromDistrict, $toDistrict, $resourceType, $amount);
+
+        // Log del trasferimento di risorse
+        CLAIR::logActivity(
+            'A',
+            'transferResources',
+            'Trasferimento di risorse tra distretti',
+            [
+                'from_district_id' => $fromDistrict->id,
+                'to_district_id' => $toDistrict->id,
+                'resource_type' => $resourceType,
+                'amount' => $amount
+            ]
+        );
 
         return redirect()->route('districts.resources')->with('success', 'Risorse trasferite con successo.');
     }
 
-    public function showDashboard()
-    {
-        // Recuperiamo i distretti con risorse critiche
-        $criticalDistricts = District::where('energy', '<', 'energy_threshold')
-            ->orWhere('water', '<', 'water_threshold')
-            ->orWhere('food', '<', 'food_threshold')
-            ->get();
-
-        // Invia le notifiche quando necessario
-        foreach ($criticalDistricts as $district) {
-            if ($district->energy < $district->energy_threshold) {
-                $this->sendResourceAlert('energia', $district);  // Passiamo il distretto come parametro
-            }
-            if ($district->water < $district->water_threshold) {
-                $this->sendResourceAlert('acqua', $district);  // Passiamo il distretto come parametro
-            }
-            if ($district->food < $district->food_threshold) {
-                $this->sendResourceAlert('cibo', $district);  // Passiamo il distretto come parametro
-            }
-        }
-
-        return view('dashboard', compact('criticalDistricts'));
-    }
-
     protected function sendResourceAlert($resourceType, District $district)
     {
-        // Recupera gli amministratori per inviare le notifiche
-        $govenment = Citizen::find(2);
+        $government = Citizen::find(2);
 
         Message::create([
-            'sender_id' => null, // Notifica di sistema
-            'recipient_id' => $govenment->id, // Destinatario
+            'sender_id' => null,
+            'recipient_id' => $government->id,
             'subject' => 'Allerta Risorse: Basso Livello di ' . ucfirst($resourceType),
             'message' => 'Il distretto "' . $district->name . '" ha un livello critico di ' . $resourceType . '.',
             'type' => 'alert',
             'url' => route('districts.show', $district->id),
-            'is_message' => false, // Non è un messaggio
-            'is_notification' => true, // È una notifica
-            'is_email' => false, // Non è un'email
-            'status' => 'unread', // Notifica non letta
+            'is_message' => false,
+            'is_notification' => true,
+            'is_email' => false,
+            'status' => 'unread',
         ]);
+
+        // Log dell'invio dell'allerta di risorse
+        CLAIR::logActivity(
+            'R',
+            'sendResourceAlert',
+            'Invio di allerta per risorse critiche',
+            [
+                'district_id' => $district->id,
+                'resource_type' => $resourceType
+            ]
+        );
     }
 }

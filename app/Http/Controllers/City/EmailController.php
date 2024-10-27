@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\City;
 
+use App\Models\CLAIR;
 use App\Models\City\Citizen;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
@@ -32,12 +33,30 @@ class EmailController extends Controller
             ->where('recipient_id', Auth::user()->citizen->id)
             ->count();
 
+        // Log dell'attività per accesso alla inbox
+        CLAIR::logActivity(
+            'C',
+            'inbox',
+            'Accesso alla inbox delle email',
+            ['user_id' => Auth::user()->citizen->id]
+        );
+
         return view('citizens.emails.index', compact('emails', 'unreadEmailsCount', 'draftsCount', 'totalEmails'));
     }
+
     public function compose()
     {
+        // Log dell'attività per l'accesso alla composizione di email
+        CLAIR::logActivity(
+            'C',
+            'compose',
+            'Accesso alla composizione di email',
+            ['user_id' => Auth::user()->citizen->id]
+        );
+
         return view('citizens.emails.compose');
     }
+
     public function sendEmail(Request $request)
     {
         $validatedData = $request->validate([
@@ -47,7 +66,7 @@ class EmailController extends Controller
             'attachments' => 'nullable|array',
         ]);
 
-        Message::create([
+        $email = Message::create([
             'sender_id' => Auth::user()->citizen->id,
             'recipient_id' => $validatedData['recipient_id'],
             'subject' => $validatedData['subject'],
@@ -57,8 +76,17 @@ class EmailController extends Controller
             'status' => 'sent',
         ]);
 
+        // Log dell'attività per invio di email
+        CLAIR::logActivity(
+            'I',
+            'sendEmail',
+            'Invio email',
+            ['email_id' => $email->id, 'recipient_id' => $validatedData['recipient_id']]
+        );
+
         return redirect()->route('email.inbox')->with('success', 'Email inviata con successo!');
     }
+
     public function search(Request $request)
     {
         $searchTerm = $request->input('search');
@@ -71,25 +99,48 @@ class EmailController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        // Log dell'attività di ricerca
+        CLAIR::logActivity(
+            'C',
+            'search',
+            'Ricerca di email',
+            ['searchTerm' => $searchTerm, 'user_id' => Auth::user()->citizen->id]
+        );
+
         return view('citizens.emails.index', compact('emails'));
     }
-
 
     public function show($id)
     {
         $email = Message::findOrFail($id);
-        if ($email->recipient_id !== Auth::user()->citizen->id()) {
+        if ($email->recipient_id !== Auth::user()->citizen->id) {
             abort(403);
         }
 
         // Imposta lo stato dell'email come "letta"
         $email->update(['status' => 'read']);
 
+        // Log dell'attività per visualizzazione di email
+        CLAIR::logActivity(
+            'C',
+            'show',
+            'Visualizzazione di una email',
+            ['email_id' => $email->id, 'user_id' => Auth::user()->citizen->id]
+        );
+
         return view('citizens.emails.show', compact('email'));
     }
 
     public function create()
     {
+        // Log dell'attività per l'accesso alla creazione di una email
+        CLAIR::logActivity(
+            'C',
+            'create',
+            'Accesso alla creazione di email',
+            ['user_id' => Auth::user()->citizen->id]
+        );
+
         return view('citizens.emails.create');
     }
 
@@ -110,8 +161,8 @@ class EmailController extends Controller
             }
         }
 
-        Message::create([
-            'sender_id' => Auth::user()->citizen->id(),
+        $email = Message::create([
+            'sender_id' => Auth::user()->citizen->id,
             'recipient_id' => $this->findUserByEmail($request->recipient)->id,
             'subject' => $request->subject,
             'message' => $request->message,
@@ -119,6 +170,14 @@ class EmailController extends Controller
             'is_email' => true,
             'status' => 'sent',
         ]);
+
+        // Log dell'attività per invio email
+        CLAIR::logActivity(
+            'I',
+            'store',
+            'Invio email',
+            ['email_id' => $email->id, 'recipient_email' => $request->recipient]
+        );
 
         return redirect()->route('emails.inbox')->with('success', 'Email inviata con successo!');
     }

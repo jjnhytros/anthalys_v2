@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Agricolture;
 
+use App\Models\CLAIR;
 use App\Models\City\Event;
 use Illuminate\Http\Request;
 use App\Models\Agricolture\Farm;
@@ -11,6 +12,14 @@ class FarmDashboardController extends Controller
 {
     public function index()
     {
+        // Log dell'attività di visualizzazione della dashboard delle fattorie
+        CLAIR::logActivity(
+            'A', // Categoria Agricultural
+            'index',
+            'Accesso alla dashboard delle fattorie',
+            []
+        );
+
         // Visualizza la dashboard
         return view('dashboard.farm');
     }
@@ -27,6 +36,18 @@ class FarmDashboardController extends Controller
         });
 
         $distribution_efficiency = rand(80, 100); // Simulazione per esempio
+
+        // Log dell'attività di recupero delle statistiche
+        CLAIR::logActivity(
+            'A',
+            'getStats',
+            'Recupero delle statistiche di produzione e distribuzione in tempo reale',
+            [
+                'total_production' => $total_production,
+                'distribution_efficiency' => $distribution_efficiency,
+                'farm_count' => $farms->count(),
+            ]
+        );
 
         return response()->json([
             'total_production' => $total_production,

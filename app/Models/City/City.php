@@ -42,4 +42,73 @@ class City extends Model
 
         $district->buildings()->insert($newBuildings);
     }
+
+    // Impatto complessivo degli Edifici Ricreativi nella città
+    public function calculateCityWellbeingImpact()
+    {
+        return $this->districts->sum->calculateDistrictWellbeingImpact();
+    }
+
+    // Impatto complessivo degli Edifici di Comunicazione e Tecnologia nella città
+    public function calculateCityTechnologyImpact()
+    {
+        return $this->districts->sum->calculateDistrictTechnologyImpact();
+    }
+
+    // Impatto complessivo delle Infrastrutture di Gestione Rifiuti nella città
+    public function calculateCityRecyclingImpact()
+    {
+        return $this->districts->sum->calculateDistrictRecyclingImpact();
+    }
+
+    // Impatto complessivo delle Infrastrutture di Emergenza e Sicurezza nella città
+    public function calculateCitySafetyImpact()
+    {
+        return $this->districts->sum->calculateDistrictSafetyImpact();
+    }
+
+    // Impatto complessivo degli Impianti di Ricerca e Innovazione nella città
+    public function calculateCityInnovationImpact()
+    {
+        return $this->districts->sum->calculateDistrictInnovationImpact();
+    }
+
+    // Impatti dagli Edifici Civili
+    public function calculateCityEducationImpact()
+    {
+        return $this->districts->sum->calculateDistrictEducationImpact();
+    }
+
+    public function calculateCityHealthImpact()
+    {
+        return $this->districts->sum->calculateDistrictHealthImpact();
+    }
+
+    // Impatti dagli Edifici Governativi
+    public function calculateCityAdministrativeImpact()
+    {
+        return $this->districts->sum->calculateDistrictAdministrativeImpact();
+    }
+
+    public function calculateCityFiscalContribution()
+    {
+        return $this->districts->sum->calculateDistrictFiscalContribution();
+    }
+
+    // Impatti dagli Edifici Culturali
+    public function calculateCityCulturalImpact()
+    {
+        return $this->districts->sum->calculateDistrictCulturalImpact();
+    }
+
+    public function calculateCityEventIncome()
+    {
+        return $this->districts->sum->calculateDistrictEventIncome();
+    }
+
+    // Impatti dalle Infrastrutture Pubbliche
+    public function calculateCityTransportImpact()
+    {
+        return $this->districts->sum->calculateDistrictTransportImpact();
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Market;
 
+use App\Models\CLAIR;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
 use App\Models\City\LoyaltyPoint;
@@ -15,12 +16,10 @@ class OnlineOrderController extends Controller
     public function index()
     {
         $orders = OnlineOrder::where('citizen_id', Auth::user()->citizen->id())->with('product')->get();
-        return view('markets.orders.index', compact('orders'));
-    }
 
-    public function create()
-    {
-        return view('markets.orders.create');
+        CLAIR::logActivity('C', 'index', 'Visualizzazione degli ordini online', ['citizen_id' => Auth::user()->citizen->id]);
+
+        return view('markets.orders.index', compact('orders'));
     }
 
     public function store(Request $request)
@@ -29,7 +28,6 @@ class OnlineOrderController extends Controller
         $quantity = $request->quantity;
 
         if ($product->quantity >= $quantity) {
-            // Crea l'ordine
             OnlineOrder::create([
                 'citizen_id' => Auth::user()->citizen->id(),
                 'product_id' => $product->id,
@@ -37,17 +35,17 @@ class OnlineOrderController extends Controller
                 'status' => 'pending',
             ]);
 
-            // Aggiorna la quantità del prodotto
             $product->quantity -= $quantity;
             $product->save();
-
-            // Aggiorna domanda e prezzo in base alle scorte e domanda
             $product->updateDemandAndPrice();
 
-            // Notifica scorte basse se necessario
-            $this->notifyLowStock($product);
+            CLAIR::logActivity('A', 'store', 'Creazione di un nuovo ordine', [
+                'citizen_id' => Auth::user()->citizen->id(),
+                'product_id' => $product->id,
+                'quantity' => $quantity
+            ]);
 
-            // Aggiungi punti fedeltà al cittadino
+            $this->notifyLowStock($product);
             $this->addLoyaltyPoints(Auth::user()->citizen->id, $product->price * $quantity);
 
             return redirect()->back()->with('success', 'Ordine completato con successo!');
@@ -56,57 +54,18 @@ class OnlineOrderController extends Controller
         }
     }
 
-    public function show(OnlineOrder $order)
-    {
-        return view('markets.orders.show', compact('order'));
-    }
-
-    public function edit(OnlineOrder $order)
-    {
-        return view('markets.orders.edit', compact('order'));
-    }
-
-    public function update(Request $request, OnlineOrder $order)
-    {
-        $order->update($request->all());
-        return redirect()->route('orders.index');
-    }
-
-    public function destroy(OnlineOrder $order)
-    {
-        $order->delete();
-        return redirect()->route('orders.index');
-    }
-
-    public function handleOrder(OnlineOrder $order)
-    {
-        $product = MarketProduct::find($order->product_id);
-
-        if ($product->quantity < $order->quantity) {
-            return response()->json(['message' => 'Quantità non sufficiente'], 400);
-        }
-
-        // Riduci la quantità disponibile
-        $product->quantity -= $order->quantity;
-        $product->save();
-
-        // Aggiorna lo stato dell'ordine
-        $order->update(['status' => 'completed']);
-
-        return response()->json(['message' => 'Ordine completato con successo!'], 200);
-    }
-
     public function confirm(Request $request, $id)
     {
         $order = OnlineOrder::findOrFail($id);
 
-        // Verifica che l'ordine non sia già stato confermato o cancellato
         if ($order->isConfirmed() || $order->isCanceled()) {
             return redirect()->back()->with('error', 'Questo ordine non può essere confermato.');
         }
 
-        // Conferma l'ordine
         $order->confirm();
+
+        CLAIR::logActivity('R', 'confirm', 'Conferma ordine', ['order_id' => $id]);
+
         return redirect()->back()->with('success', 'Ordine confermato con successo!');
     }
 
@@ -114,33 +73,29 @@ class OnlineOrderController extends Controller
     {
         $order = OnlineOrder::findOrFail($id);
 
-        // Verifica che l'ordine non sia già stato confermato o cancellato
         if ($order->isConfirmed() || $order->isCanceled()) {
             return redirect()->back()->with('error', 'Questo ordine non può essere cancellato.');
         }
 
-        // Cancella l'ordine
         $order->cancel();
-        return redirect()->back()->with('success', 'Ordine cancellato con successo!');
-    }
 
-    public function history()
-    {
-        $orders = OnlineOrder::where('citizen_id', Auth::user()->citizen->id)->orderBy('created_at', 'desc')->get();
-        return view('orders.history', compact('orders'));
+        CLAIR::logActivity('R', 'cancel', 'Cancellazione ordine', ['order_id' => $id]);
+
+        return redirect()->back()->with('success', 'Ordine cancellato con successo!');
     }
 
     protected function addLoyaltyPoints($citizenId, $orderTotal)
     {
-        // Calcola i punti (1 punto per ogni 12 AA spesi)
         $points = floor($orderTotal / 12);
-
-        // Trova o crea i punti fedeltà per il cittadino
         $loyalty = LoyaltyPoint::firstOrCreate(['citizen_id' => $citizenId]);
 
-        // Aggiorna i punti del cittadino
         $loyalty->points += $points;
         $loyalty->save();
+
+        CLAIR::logActivity('L', 'addLoyaltyPoints', 'Assegnazione punti fedeltà', [
+            'citizen_id' => $citizenId,
+            'points' => $points
+        ]);
     }
 
     protected function notifyLowStock($product)
@@ -155,6 +110,11 @@ class OnlineOrderController extends Controller
                 'is_archived' => false,
                 'is_notification' => true,
                 'created_at' => now(),
+            ]);
+
+            CLAIR::logActivity('I', 'notifyLowStock', 'Notifica di scorte basse', [
+                'product_id' => $product->id,
+                'quantity' => $product->quantity
             ]);
         }
     }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\City;
 
+use App\Models\CLAIR;
 use App\Models\City\Citizen;
 use App\Models\City\Message;
 use Illuminate\Http\Request;
@@ -26,6 +27,12 @@ class ChatController extends Controller
                 return $message->sender_id === $citizen->id ? $message->recipient_id : $message->sender_id;
             });
 
+        // Registra l'attività di visualizzazione delle chat
+        CLAIR::logActivity('C', 'index', 'Visualizzazione delle chat recenti', [
+            'citizen_id' => $citizen->id,
+            'chat_count' => $recentChats->count()
+        ]);
+
         return view('citizens.chat.index', compact('recentChats'));
     }
 
@@ -47,6 +54,13 @@ class ChatController extends Controller
         // Recupera i dettagli del destinatario
         $recipient = Citizen::findOrFail($id);
 
+        // Registra l'attività di visualizzazione della conversazione
+        CLAIR::logActivity('I', 'show', 'Visualizzazione dei messaggi tra il cittadino e un altro utente', [
+            'citizen_id' => $citizen->id,
+            'recipient_id' => $id,
+            'message_count' => $messages->count()
+        ]);
+
         return view('citizens.chat.show', compact('messages', 'recipient'));
     }
 
@@ -63,11 +77,18 @@ class ChatController extends Controller
         $citizen = Auth::user()->citizen;
 
         // Crea e salva un nuovo messaggio
-        Message::create([
+        $message = Message::create([
             'sender_id' => $citizen->id,
             'recipient_id' => $request->recipient_id,
             'message' => $request->message,
             'is_message' => true, // Indica che è un messaggio di chat
+        ]);
+
+        // Registra l'attività di invio del messaggio
+        CLAIR::logActivity('I', 'sendMessage', 'Invio di un nuovo messaggio', [
+            'sender_id' => $citizen->id,
+            'recipient_id' => $request->recipient_id,
+            'message_id' => $message->id
         ]);
 
         // Reindirizza alla pagina della chat con l'utente specificato

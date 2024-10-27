@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Resource;
 
+use App\Models\CLAIR;
 use Illuminate\Http\Request;
 use App\Models\City\District;
 use App\Models\Resource\Resource;
@@ -56,8 +57,17 @@ class ResourceTransferController extends Controller
             'quantity' => $request->quantity,
         ]);
 
+        // Log dell'attività di trasferimento delle risorse
+        CLAIR::logActivity('I', 'transfer', 'Trasferimento di risorse tra distretti', [
+            'source_district' => $sourceDistrict->name,
+            'target_district' => $targetDistrict->name,
+            'resource' => $resource->name,
+            'quantity' => $request->quantity,
+        ]);
+
         return back()->with('success', 'Trasferimento di risorse completato con successo!');
     }
+
     public function redistributeResources()
     {
         $districts = District::with('resources')->get();
@@ -72,6 +82,14 @@ class ResourceTransferController extends Controller
 
                     if ($sourceDistrict) {
                         $this->transferResource($sourceDistrict, $district, $resource);
+
+                        // Log dell'attività di ridistribuzione automatica delle risorse
+                        CLAIR::logActivity('A', 'redistributeResources', 'Ridistribuzione automatica delle risorse', [
+                            'source_district' => $sourceDistrict->name,
+                            'target_district' => $district->name,
+                            'resource' => $resource->name,
+                            'quantity' => 100,
+                        ]);
                     }
                 }
             }
