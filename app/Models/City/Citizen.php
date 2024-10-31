@@ -1,9 +1,10 @@
 <?php
-
+// app/Models/City/Citizen.php
 namespace App\Models\City;
 
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
+use App\Models\School\CitizenAnswer;
 use Illuminate\Database\Eloquent\Model;
 
 class Citizen extends Model
@@ -62,6 +63,10 @@ class Citizen extends Model
         return $this->belongsTo(Occupation::class);
     }
 
+    public function citizenAnswers()
+    {
+        return $this->hasMany(CitizenAnswer::class);
+    }
 
     public function scopeSupplier($query)
     {

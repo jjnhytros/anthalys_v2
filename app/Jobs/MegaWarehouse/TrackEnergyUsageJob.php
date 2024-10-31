@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Jobs\Warehouse;
+namespace App\Jobs\MegaWarehouse;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;

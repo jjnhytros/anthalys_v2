@@ -4,6 +4,7 @@ use App\Models\User;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 use App\Console\Commands\SimulateGovernmentPolicies;
+use App\Http\Controllers\School\LessonController;
 use App\Http\Controllers\City\{
     ChatController,
     CitizenController,
@@ -25,7 +26,6 @@ use App\Http\Controllers\City\{
     RewardController,
     RobotController,
     SubsidyController,
-    TaxController,
     TimeController,
 };
 use App\Http\Controllers\Market\{
@@ -54,6 +54,7 @@ use App\Http\Controllers\MegaWarehouse\{
     WarehouseController,
     WarehouseTransactionController
 };
+
 use App\Http\Controllers\Production\AlcoholicController;
 
 Route::get('/time/get', [TimeController::class, 'calculateElapsedTime']);

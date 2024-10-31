@@ -122,11 +122,12 @@ return [
         'driver' => env('APP_MAINTENANCE_DRIVER', 'file'),
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
-    'providers' => [
-        App\Providers\CLAIRServiceProvider::class,
-    ],
-    'aliases' => [
-        'CLAIR' => App\Facades\CLAIR::class,
-    ],
+    // 'providers' => [
+    //     App\Providers\CLAIRServiceProvider::class,
+    // ],
+    // 'aliases' => [
+    //     'CLAIR' => App\Facades\CLAIR::class,
+    // ],
 
+    'disable_auth_during_seeding' => false,
 ];

@@ -29,7 +29,7 @@ class CityAndCitizenSeeder extends Seeder
 
 
         // Creazione di altri 24 utenti e cittadini casuali
-        for ($i = 1; $i <= 24; $i++) {
+        for ($i = 1; $i <= 48; $i++) {
             $user = User::create([
                 'name' => 'user' . $i,
                 'email' => 'user' . $i . '@example.com',

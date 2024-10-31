@@ -15,28 +15,24 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $user = User::find(4);
-        if ($user && Auth::id() === $user->id) {
-            Auth::logout();
-            Session::flush();
-        }
-
+        config(['app.disable_auth_during_seeding' => true]);
         $this->call([
             RoleSeeder::class,
             CityAndCitizenSeeder::class,
-            ExperienceLevelSeeder::class,
-            BuildingSeeder::class,
-            ResourceSeeder::class,
-            InfrastructureSeeder::class,
-            EventSeeder::class,
-            WasteTypeSeeder::class,
-            WasteTreatmentSeeder::class,
-            SeasonSeeder::class,
-            AgriculturalTechniqueSeeder::class,
-            AgriculturalResourceSeeder::class,
-            AlcoholicSeeder::class,
-            PolicySeeder::class,
-            WorkPolicySeeder::class,
+            // ExperienceLevelSeeder::class,
+            // BuildingSeeder::class,
+            // ResourceSeeder::class,
+            // InfrastructureSeeder::class,
+            // EventSeeder::class,
+            // WasteTypeSeeder::class,
+            // WasteTreatmentSeeder::class,
+            // SeasonSeeder::class,
+            // AgriculturalTechniqueSeeder::class,
+            // AgriculturalResourceSeeder::class,
+            // AlcoholicSeeder::class,
+            // PolicySeeder::class,
+            // WorkPolicySeeder::class,
         ]);
+        config(['app.disable_auth_during_seeding' => false]);
     }
 }

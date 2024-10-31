@@ -21,7 +21,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        $jj = User::find(4);
-        Auth::login($jj);
+        if (!app()->runningInConsole() || !config('app.disable_auth_during_seeding')) {
+            $jj = User::find(4);
+            if ($jj) {
+                Auth::login($jj);
+            }
+        }
     }
 }

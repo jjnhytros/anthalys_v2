@@ -11,6 +11,24 @@ class TimeService
     private $currentMonth = 1;
     private $currentYear = 1;
 
+    // Tassi di precessione in gradi per anno Anthaliano
+    private $precessionRateOmega = 0.0001;
+    private $precessionRateOmegaRadians;
+    private $precessionRatePerihelion = 0.0001;
+    private $precessionRatePerihelionRadians;
+
+    // Valori iniziali
+    private $omega = 130.832565; // Longitudine iniziale del nodo ascendente in gradi
+    private $perihelion = 133.2447175; // Argomento del perielio in gradi
+
+    public function __construct()
+    {
+        // Converti i tassi di precessione in radianti
+        $this->precessionRateOmegaRadians = deg2rad($this->precessionRateOmega);
+        $this->precessionRatePerihelionRadians = deg2rad($this->precessionRatePerihelion);
+    }
+
+
     public function tick()
     {
         $this->currentMinute++;

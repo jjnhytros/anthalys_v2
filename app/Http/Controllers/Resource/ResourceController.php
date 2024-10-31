@@ -5,12 +5,9 @@ namespace App\Http\Controllers\Resource;
 use App\Models\CLAIR;
 use App\Models\City\City;
 use App\Models\City\Message;
-use Illuminate\Http\Request;
 use App\Models\City\District;
 use App\Models\Resource\Resource;
 use App\Http\Controllers\Controller;
-use App\Models\Resource\EmergencyPlan;
-use App\Models\Resource\ResourceTransfer;
 
 class ResourceController extends Controller
 {
